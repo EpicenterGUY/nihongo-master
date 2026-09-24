@@ -1,5 +1,5 @@
 {
-  "version": "10.2.2",
+  "version": "10.3.0",
   "channel": "stable",
   "entry": "index.html",
   "updated": "2026-09-25",
@@ -10,6 +10,8 @@
     "advanced-vocab-expansion",
     "advanced-grammar-expansion",
     "library-scroll-fix",
-    "oni-gateway-ui"
+    "oni-gateway-ui",
+    "guided-study-home",
+    "daily-three-step-route"
   ]
 }
