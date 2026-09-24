@@ -972,4 +972,134 @@ try{renderV103Guide()}catch(e){}
 try{updateUI()}catch(e){}
 bindV104StudyStart();
 
+
+// ===== v10.4.1: Oni isolation + Korean grammar + full Hanja hun-eum =====
+document.title="日本語 MASTER v10.4.1";
+
+// 1) Normal mode must never expose the post-N1 ladder.
+function syncV1041OniIsolation(){
+ const master=document.getElementById("oniOnlyMasterRoad");
+ if(master)master.style.display=oni.enabled?"block":"none";
+ if(!oni.enabled){
+  document.querySelectorAll("#roadLevels .level-chip").forEach(b=>{
+   const t=(b.textContent||"").trim();
+   if(ONI_LEVELS.includes(t)||t==="MASTER")b.remove();
+  });
+ }
+}
+syncV1041OniIsolation();
+
+// 2) External grammar packs sometimes contain English form/nuance fields.
+// Normalize them before any lesson/detail is rendered.
+function normalizeV1041GrammarKo(x){
+ if(!x||x._v1041KoNormalized)return;
+ const key=String(x.term||"").replace(/[～~\s]/g,"");
+ if(x.level==="N5"&&key==="一番"){
+  x.meaning="가장 ~; 제일 ~";
+  x.form="一番 + い형용사 / な형용사 / 명사\n[범위] + の中で + 一番 + 형용사";
+  x.nuance="여러 대상 가운데 정도가 가장 높은 것을 나타내는 최상급 표현이야. 一番大きい는 ‘가장 크다’, 一番好き는 ‘가장 좋아하다’라는 뜻이야.";
+  V104_GRAMMAR_HELP[x.term]=[
+   "여러 대상 중 하나가 ‘가장 ~하다’라고 말할 때 쓰는 일본어 최상급 표현이야.",
+   "크기·가격·좋아하는 것처럼 여러 대상을 비교해서 1등을 말할 때 써.",
+   "一番은 원래 ‘1번’이라는 뜻이니까 ‘순위가 맨 위’라고 연결해서 기억하면 쉬워."
+  ];
+ }
+ x.form=String(x.form||"")
+  .replace(/i-adjective/gi,"い형용사")
+  .replace(/na-adjective/gi,"な형용사")
+  .replace(/noun/gi,"명사")
+  .replace(/verb/gi,"동사")
+  .replace(/\[group\]/gi,"[범위]")
+  .replace(/plain form/gi,"보통형")
+  .replace(/dictionary form/gi,"사전형")
+  .replace(/stem/gi,"어간");
+ x._v1041KoNormalized=true;
+}
+async function ensureV1041GrammarKo(x){
+ if(!x||x._type!=="grammar"&&!(DB.grammar||[]).includes(x))return;
+ normalizeV1041GrammarKo(x);
+ if(hasLatin(x.form||""))x.form=await translateEnKo(x.form);
+ if(hasLatin(x.nuance||""))x.nuance=await translateEnKo(x.nuance);
+ if(hasLatin(x.meaning||""))x.koMeaning=await ensureKoreanMeaning(x);
+}
+const v1041StageBase=showV104LessonStage;
+showV104LessonStage=async function(n){
+ const x=learnDeck[learnIndex];
+ if(x&&x._type==="grammar")await ensureV1041GrammarKo(x);
+ return v1041StageBase(n);
+};
+showLessonStage=showV104LessonStage;
+
+const v1041DetailBase=renderDetailAsync;
+renderDetailAsync=async function(x,type){
+ if(type==="grammar"){x._type="grammar";await ensureV1041GrammarKo(x)}
+ return v1041DetailBase(x,type);
+};
+
+// 3) Korean Hanja fallback for non-Joyo / rare characters.
+// The grade CSV already includes Korean meaning + reading; use it instead of only the Joyo mapping.
+let v1041HanjaFull=new Map();
+const V1041_HANJA_IMMEDIATE=new Map([
+ ["瑕",{korean_hanja:"瑕",eumhun:["허물 하"],grade:"1급"}],
+ ["斂",{korean_hanja:"斂",eumhun:["거둘 렴"],grade:"1급"}],
+ ["齟",{korean_hanja:"齟",eumhun:["어긋날 저"],grade:"준특급"}],
+ ["齬",{korean_hanja:"齬",eumhun:["어긋날 어"],grade:"준특급"}],
+ ["乖",{korean_hanja:"乖",eumhun:["어그러질 괴"],grade:"1급"}]
+]);
+const v1041OldHanjaKoInfo=hanjaKoInfo;
+hanjaKoInfo=function(ch){
+ return v1041OldHanjaKoInfo(ch)||v1041HanjaFull.get(ch)||V1041_HANJA_IMMEDIATE.get(ch)||null;
+};
+function parseV1041GradeHun(raw,mainSound){
+ const tokens=[...String(raw||"").matchAll(/'([^']+)'/g)].map(m=>m[1]);
+ if(!tokens.length)return [];
+ let soundIndex=tokens.findIndex(t=>t===mainSound);
+ let meanings=soundIndex>0?tokens.slice(0,soundIndex):tokens.slice(0,1);
+ meanings=[...new Set(meanings.filter(Boolean))].slice(0,3);
+ return meanings.map(h=>h+" "+mainSound);
+}
+async function loadV1041FullHanja(){
+ try{
+  const cached=await cacheGet("v1041_hanja_full");
+  if(cached&&Array.isArray(cached.rows)){
+   v1041HanjaFull=new Map(cached.rows.map(x=>[x.ch,x.info]));
+   return;
+  }
+ }catch(e){}
+ try{
+  const r=await fetch(V4_HANJA_GRADE_URL,{cache:"force-cache"});
+  if(!r.ok)return;
+  const rows=parseCSV(await r.text()),head=rows.shift();
+  const ix=Object.fromEntries(head.map((h,i)=>[h.trim(),i]));
+  const built=[];
+  for(const row of rows){
+   const ch=row[ix.hanja],level=row[ix.level],sound=row[ix.main_sound],raw=row[ix.meaning];
+   if(!ch||!sound)continue;
+   const eumhun=parseV1041GradeHun(raw,sound);
+   if(!eumhun.length)continue;
+   built.push({ch,info:{korean_hanja:ch,eumhun,grade:level||""}});
+  }
+  v1041HanjaFull=new Map(built.map(x=>[x.ch,x.info]));
+  try{await cacheSet("v1041_hanja_full",{rows:built})}catch(e){}
+  if(document.querySelector("#library.page.active"))renderLibrary();
+ }catch(e){console.warn("full Korean Hanja load failed",e)}
+}
+loadV1041FullHanja();
+
+// Keep list/detail text Korean as soon as the expanded map is available.
+const v1041ListSubBase=listSubText;
+listSubText=function(x,type){
+ if(type==="kanji"){
+  const inf=hanjaKoInfo(x.term);
+  if(inf)return inf.eumhun.join(" · ");
+ }
+ return v1041ListSubBase(x,type);
+};
+
+const v1041Apply=applyMode;
+applyMode=function(){v1041Apply();syncV1041OniIsolation()};
+const v1041Nav=navTo;
+navTo=function(id){v1041Nav(id);syncV1041OniIsolation()};
+syncV1041OniIsolation();
+
 })();
