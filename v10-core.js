@@ -542,4 +542,190 @@ navTo=function(id){v102Nav(id);syncV102Gateway();if(id==="library"){v102LibraryV
 syncV102Gateway();
 renderLibrary();
 
+
+// ===== v10.3: guided home / clear next action =====
+document.title="日本語 MASTER v10.3";
+
+const v103Style=document.createElement("style");
+v103Style.textContent=`
+/* v10.3 — guided home */
+.guided-home{max-width:980px;margin:0 auto}
+.guide-focus{padding:24px!important;overflow:hidden}
+.guide-topline{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.guide-step-badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;background:#24262b;color:#fff;padding:6px 10px;font-size:12px;font-weight:950}
+.guide-estimate{color:var(--muted);font-size:12px;font-weight:850}
+.guide-kicker{margin-top:18px;color:var(--accent);font-weight:950;font-size:13px}
+.guide-focus h2{font-size:32px;margin:5px 0 8px;line-height:1.25}
+.guide-focus p{margin:0;color:var(--muted);line-height:1.6;max-width:760px}
+.guide-action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+.guide-action-row .primary{min-width:210px;font-size:16px;padding:13px 17px}
+.guide-action-row .secondary{min-height:46px}
+.guide-route-card{margin-top:12px;padding:17px}
+.guide-route-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:11px}
+.guide-route-head h3{margin:0;font-size:18px}.guide-route-head small{color:var(--muted)}
+.guide-route{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.guide-route-step{position:relative;border:1px solid var(--line);border-radius:16px;background:#fff;padding:13px;text-align:left;min-height:92px}
+.guide-route-step:after{content:"→";position:absolute;right:-14px;top:34px;font-weight:1000;color:#cfc8c0;z-index:2}
+.guide-route-step:last-child:after{display:none}
+.guide-route-step .n{width:25px;height:25px;border-radius:50%;display:grid;place-items:center;background:#f1ede8;font-size:12px;font-weight:1000;margin-bottom:7px}
+.guide-route-step b,.guide-route-step small{display:block}.guide-route-step small{margin-top:4px;color:var(--muted);line-height:1.4}
+.guide-route-step.active{border-color:#ffb49f;background:#fff8f4;box-shadow:0 0 0 2px rgba(255,120,88,.08)}
+.guide-route-step.active .n{background:var(--accent);color:#fff}
+.guide-route-step.done{background:#f3faf7;border-color:#d7ece3}.guide-route-step.done .n{background:#45b88e;color:#fff}
+.guide-note{margin-top:10px;padding:10px 12px;border-radius:13px;background:#faf7f2;color:#706b65;font-size:12px;line-height:1.55}
+.guide-other{margin-top:12px}.guide-other summary{font-weight:900}
+.guide-other-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding-top:10px}
+.guide-other-btn{border:1px solid var(--line);background:#fff;border-radius:15px;padding:13px;text-align:left}
+.guide-other-btn span{font-size:22px}.guide-other-btn b,.guide-other-btn small{display:block}.guide-other-btn b{margin:5px 0 2px}.guide-other-btn small{color:var(--muted);line-height:1.35}
+.guide-progress-details{margin-top:12px}
+body.oni-mode .guide-focus{background:linear-gradient(145deg,#fff,#fff4f7 60%,#f0e9f7);border-color:#e4cbd4}
+body.oni-mode .guide-step-badge{background:#531d30}
+body.oni-mode .guide-kicker{color:#8e304e}
+body.oni-mode .guide-route-step.active{border-color:#b86882;background:#fff6f8;box-shadow:0 0 0 2px rgba(118,36,64,.08)}
+body.oni-mode .guide-route-step.active .n{background:#7d2947}
+body.oni-mode .oni-home-panel{display:none!important}
+@media(max-width:720px){
+ .guide-focus{padding:19px!important}.guide-focus h2{font-size:25px}
+ .guide-action-row{display:grid;grid-template-columns:1fr}.guide-action-row button{width:100%}
+ .guide-route{grid-template-columns:1fr}.guide-route-step{min-height:0}
+ .guide-route-step:after{content:"↓";right:14px;top:auto;bottom:-17px;background:var(--bg);padding:0 4px}
+ .guide-other-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:390px){.guide-other-grid{grid-template-columns:1fr}}
+`;
+document.head.appendChild(v103Style);
+
+function ensureV103GuidedHome(){
+ const home=document.querySelector("#home .home-simple");if(!home||home.dataset.v103)return;
+ home.dataset.v103="1";
+ home.className="guided-home";
+ home.innerHTML=`
+  <div class="hero guide-focus">
+   <div class="guide-topline"><span class="guide-step-badge" id="guideStepBadge">1단계 · 시작</span><span class="guide-estimate" id="estimate">예상 단계 · N5 입문</span></div>
+   <div class="guide-kicker" id="guideKicker">지금 할 것</div>
+   <h2 id="nextStudyTitle">먼저 시작점을 정해</h2>
+   <p id="nextStudyDesc">처음이라면 N5 기초부터, 이미 공부한 적이 있다면 수준 진단부터 시작하면 돼.</p>
+   <div class="progress" style="margin-top:16px"><span id="nextStudyBar" style="width:0%"></span></div>
+   <div class="guide-action-row"><button type="button" class="primary" id="guidePrimary">🌱 N5 기초 시작</button><button type="button" class="secondary" id="guideSecondary">🩺 수준 진단</button></div>
+  </div>
+  <div class="card guide-route-card">
+   <div class="guide-route-head"><h3>오늘은 이 3개만</h3><small id="guideRouteSummary">순서대로 하면 끝</small></div>
+   <div class="guide-route" id="guideRoute"></div>
+   <div class="guide-note" id="guideNote">처음부터 모든 메뉴를 볼 필요 없어. 위 순서만 따라가면 돼.</div>
+  </div>
+  <details class="compact-details guide-other">
+   <summary>다른 공부 방법 보기</summary>
+   <div class="guide-other-grid">
+    <button type="button" class="guide-other-btn" data-guide-other="free"><span>🧠</span><b>자유 학습</b><small>급수·영역 직접 선택</small></button>
+    <button type="button" class="guide-other-btn" data-guide-other="find"><span>🔎</span><b>찾기</b><small>단어·문법 바로 검색</small></button>
+    <button type="button" class="guide-other-btn" data-guide-other="road"><span>🗺️</span><b>로드맵</b><small>전체 과정 확인</small></button>
+    <button type="button" class="guide-other-btn" data-guide-other="quiz"><span>🎯</span><b>퀴즈</b><small>바로 실력 확인</small></button>
+   </div>
+  </details>
+  <details class="compact-details guide-progress-details">
+   <summary>내 진행 상황 보기</summary>
+   <div class="compact-progress-card" style="box-shadow:none;border:0;padding:4px 0 0">
+    <div class="row" style="justify-content:space-between"><div><span class="muted small">학습 레벨</span><div class="big" id="overallLevel">Lv.1</div></div><div class="home-stat-pills"><span class="pill">⭐ <b id="xpHome">0 XP</b></span><span class="pill">🔥 <b id="streakHome">1일</b></span><span class="pill">📚 <b id="dbCount">0항목</b></span></div></div>
+    <div class="progress" style="margin-top:10px"><span id="overallBar" style="width:0%"></span></div>
+    <details class="compact-details"><summary>분야별 진척도</summary><div id="skillHome"></div></details>
+   </div>
+  </details>
+  <span id="reviewCount" style="display:none">0개</span>`;
+}
+
+function v103UniverseSeen(){
+ const allowed=x=>oni.enabled?(x.level===oni.level||(DB.kanji.includes(x)&&(oni.level.startsWith("MASTER")||oni.level==="深淵")&&x.level==="MASTER")):NORMAL_LEVELS.includes(x.level);
+ let n=0;["vocab","grammar","kanji"].forEach(t=>(DB[t]||[]).forEach(x=>{if(allowed(x)&&state.seen[x.id]?.count>0)n++}));
+ return n;
+}
+function v103ReviewCount(){try{return reviewItems().length}catch(e){return 0}}
+function v103CurrentLevel(){return oni.enabled?oni.level:(recommended?.level&&NORMAL_LEVELS.includes(recommended.level)?recommended.level:"N5")}
+function v103CatName(cat){return (CAT_META[cat]?.name||names[cat]||cat)}
+function v103StartRecommended10(){
+ setStudyView("card");navTo("learnmode");
+ const lv=document.getElementById("learnLevel"),ct=document.getElementById("learnCat"),sz=document.getElementById("learnSize");
+ const level=v103CurrentLevel(),cat=recommended?.cat||"vocab";
+ if(lv)lv.value=level;if(ct)ct.value=cat;if(sz)sz.value="10";updatePosFilterVisibility();startLearn();
+}
+function v103StartReview(){startReviewMode("all")}
+function v103QuickQuiz(){
+ navTo("quizpage");
+ const lv=document.getElementById("quizLevel"),cat=document.getElementById("quizCat"),sz=document.getElementById("quizSize");
+ if(lv)lv.value=v103CurrentLevel();if(cat)cat.value="mixed";if(sz)sz.value="10";
+ startQuiz();
+}
+function v103RouteStep(n,title,desc,action,active=false,done=false){
+ return `<button type="button" class="guide-route-step ${active?"active":""} ${done?"done":""}" data-guide-action="${action}"><span class="n">${done?"✓":n}</span><b>${escapeHtml(title)}</b><small>${escapeHtml(desc)}</small></button>`;
+}
+function renderV103Guide(){
+ ensureV103GuidedHome();
+ const title=document.getElementById("nextStudyTitle"),desc=document.getElementById("nextStudyDesc"),bar=document.getElementById("nextStudyBar");
+ const badge=document.getElementById("guideStepBadge"),kicker=document.getElementById("guideKicker"),p=document.getElementById("guidePrimary"),s=document.getElementById("guideSecondary"),route=document.getElementById("guideRoute"),sum=document.getElementById("guideRouteSummary"),note=document.getElementById("guideNote");
+ if(!title||!p||!route)return;
+ const seen=v103UniverseSeen(),reviews=v103ReviewCount(),level=v103CurrentLevel(),cat=recommended?.cat||"vocab",catName=v103CatName(cat);
+ if(oni.enabled){
+   const pr=progressFor(oni.level,cat),reviewFirst=reviews>=8;
+   badge.textContent=`👹 ${oni.level} · 오늘 루트`;kicker.textContent="오니 모드에서 지금 할 것";
+   if(reviewFirst){
+     title.textContent=`먼저 복습 ${Math.min(reviews,30)}개부터`;desc.textContent=`${oni.level}에서 다시/어려움으로 남은 항목이 ${reviews}개 있어. 새 내용을 늘리기 전에 이걸 먼저 정리하는 게 좋아.`;
+     p.textContent="🔁 1단계 복습 시작";p.dataset.guideAction="review";s.textContent=`그다음 ${catName} 10개`;s.dataset.guideAction="learn";
+     route.innerHTML=v103RouteStep(1,`복습 ${Math.min(reviews,30)}개`,"헷갈린 것부터 정리","review",true)+v103RouteStep(2,`${catName} 10개`,`${oni.level} 새 내용`,"learn")+v103RouteStep(3,"10문제 확인","오늘 공부 마무리","quiz");
+   }else{
+     title.textContent=`${oni.level} ${catName} 10개부터`;desc.textContent=`현재 ${oni.level}에서 가장 덜 진행된 영역이 ${catName}이야. 오늘은 욕심내지 말고 10개 → 복습 → 확인 순서로 가면 돼.`;
+     p.textContent=`▶ 1단계 ${catName} 10개 시작`;p.dataset.guideAction="learn";s.textContent=reviews?`복습 ${reviews}개 보기`:"암기표로 훑기";s.dataset.guideAction=reviews?"review":"table";
+     route.innerHTML=v103RouteStep(1,`${catName} 10개`,`${pr.seen}/${pr.total} 학습 중`,"learn",true)+v103RouteStep(2,reviews?`복습 ${reviews}개`:"어휘 훑기",reviews?"헷갈린 항목 다시 보기":"암기표로 전체 감 잡기",reviews?"review":"table")+v103RouteStep(3,"10문제 확인","오늘 공부 마무리","quiz");
+   }
+   if(bar)bar.style.width=`${pr.pct||0}%`;if(sum)sum.textContent=`${oni.level}만 집중`;if(note)note.textContent="오니 모드에서는 다른 급수를 신경 쓸 필요 없어. 지금 선택한 단계에서 위 3개만 하면 돼.";
+ }else if(seen===0){
+   badge.textContent="STEP 1 · 시작점 정하기";kicker.textContent="처음이라면 여기서 시작";
+   title.textContent="일본어를 얼마나 했는지만 정하면 돼";desc.textContent="완전 처음이면 N5 기초 10개를 바로 시작하고, 이미 배운 적이 있으면 3분 수준 진단으로 시작점을 잡아.";
+   p.textContent="🌱 완전 처음 · N5 시작";p.dataset.guideAction="zero";s.textContent="🩺 배운 적 있음 · 수준 진단";s.dataset.guideAction="diagnosis";
+   route.innerHTML=v103RouteStep(1,"시작점 정하기","N5 또는 수준 진단","zero",true)+v103RouteStep(2,"기초 10개","어휘·문법을 작게 시작","learn")+v103RouteStep(3,"첫 복습","헷갈린 것만 다시 보기","review");
+   if(bar)bar.style.width="0%";if(sum)sum.textContent="첫날은 10개면 충분";if(note)note.textContent="메뉴를 하나씩 둘러볼 필요 없어. 위 두 버튼 중 자기 상황에 맞는 것 하나만 누르면 돼.";
+ }else{
+   const pr=progressFor(level,cat),reviewFirst=reviews>=8;
+   badge.textContent=`${level} · 오늘 루트`;kicker.textContent="지금 가장 먼저 할 것";
+   if(reviewFirst){
+     title.textContent=`복습 ${Math.min(reviews,30)}개를 먼저 정리해`;desc.textContent=`다시/어려움으로 남은 항목이 ${reviews}개 있어. 새 공부보다 복습을 먼저 끝내면 오늘 할 일이 훨씬 선명해져.`;
+     p.textContent="🔁 1단계 복습 시작";p.dataset.guideAction="review";s.textContent=`그다음 ${level} ${catName} 10개`;s.dataset.guideAction="learn";
+     route.innerHTML=v103RouteStep(1,`복습 ${Math.min(reviews,30)}개`,"기억이 흐린 것부터","review",true)+v103RouteStep(2,`${catName} 10개`,`${level} 새 내용`,"learn")+v103RouteStep(3,"10문제 확인","오늘 공부 마무리","quiz");
+   }else{
+     title.textContent=`${level} ${catName} 10개만 먼저 해`;desc.textContent=`현재 가장 덜 진행된 영역이 ${catName}이야. 10개 공부한 뒤 복습하고 마지막으로 10문제만 확인하면 오늘 분량 끝.`;
+     p.textContent=`▶ 1단계 ${catName} 10개 시작`;p.dataset.guideAction="learn";s.textContent=reviews?`복습 ${reviews}개`:"수준 다시 진단";s.dataset.guideAction=reviews?"review":"diagnosis";
+     route.innerHTML=v103RouteStep(1,`${catName} 10개`,`${pr.seen}/${pr.total} 학습 중`,"learn",true)+v103RouteStep(2,reviews?`복습 ${reviews}개`:"짧은 복습","방금 배운 것 다시 확인",reviews?"review":"learn")+v103RouteStep(3,"10문제 확인","오늘 공부 마무리","quiz");
+   }
+   if(bar)bar.style.width=`${pr.pct||0}%`;if(sum)sum.textContent="1 → 2 → 3 순서";if(note)note.textContent="자유 학습·로드맵·검색은 필요할 때만 열면 돼. 평소에는 위 3단계만 따라가면 돼.";
+ }
+ const est=document.getElementById("estimate");if(est)est.textContent=oni.enabled?`현재 · ${oni.level} 전용`:`현재 추천 · ${level}`;
+}
+
+function runV103Action(action){
+ if(action==="zero"){startFromZero();return}
+ if(action==="diagnosis"){navTo("diagnosis");return}
+ if(action==="learn"){v103StartRecommended10();return}
+ if(action==="review"){v103StartReview();return}
+ if(action==="quiz"){v103QuickQuiz();return}
+ if(action==="table"){oniOpenTable();return}
+}
+document.addEventListener("click",e=>{
+ const action=e.target.closest("[data-guide-action]")?.dataset.guideAction;if(action){runV103Action(action);return}
+ const other=e.target.closest("[data-guide-other]")?.dataset.guideOther;if(!other)return;
+ if(other==="free")navTo("learnmode");else if(other==="find")navTo("library");else if(other==="road")navTo("jlpt");else if(other==="quiz")v103QuickQuiz();
+});
+function bindV103Primary(){
+ const p=document.getElementById("guidePrimary"),s=document.getElementById("guideSecondary");
+ if(p&&!p.dataset.v103){p.dataset.v103="1";p.addEventListener("click",()=>runV103Action(p.dataset.guideAction))}
+ if(s&&!s.dataset.v103){s.dataset.v103="1";s.addEventListener("click",()=>runV103Action(s.dataset.guideAction))}
+}
+const v103Update=updateUI;
+updateUI=function(){v103Update();renderV103Guide();bindV103Primary()};
+const v103Apply=applyMode;
+applyMode=function(){v103Apply();renderV103Guide();bindV103Primary()};
+const v103Nav=navTo;
+navTo=function(id){v103Nav(id);if(id==="home"){renderV103Guide();bindV103Primary()}};
+ensureV103GuidedHome();
+updateUI();
+renderV103Guide();
+bindV103Primary();
+
 })();
