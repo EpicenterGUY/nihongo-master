@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#fff8ef">
-<title>日本語 MASTER v10.2</title>
+<title>日本語 MASTER v10.2.1</title>
 <style>
 :root{
  --bg:#fff8ef;--panel:#fff;--text:#202228;--muted:#777b84;--line:#eee3d6;
@@ -194,6 +194,24 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
 @media(max-width:900px){.home-mini-grid{grid-template-columns:repeat(3,1fr)}.review-actions{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:680px){.simple-study-controls{grid-template-columns:1fr 1fr}.simple-study-controls .primary{grid-column:1/-1}.home-mini-grid{grid-template-columns:1fr}.review-summary{grid-template-columns:repeat(3,1fr)}.review-actions{grid-template-columns:1fr 1fr}.more-grid{grid-template-columns:1fr 1fr}.vocab-table{min-width:0}.vocab-table th:nth-child(4),.vocab-table td:nth-child(4){display:none}.vocab-table th,.vocab-table td{padding:9px 7px}.vocab-term{font-size:18px}.table-status button{padding:5px 6px}.home-stat-pills{justify-content:flex-start;margin-top:8px}}
 @media(max-width:440px){.review-summary{grid-template-columns:1fr 1fr}.review-summary .review-stat:last-child{grid-column:1/-1}.more-grid{grid-template-columns:1fr 1fr}.table-toolbar .table-stat{width:100%;margin-left:0}}
+
+
+/* ===== v10.2.1 static Oni gateway ===== */
+.oni-static-entry{background:linear-gradient(145deg,#351923,#742943)!important;color:#fff!important;border-color:#6b3148!important}
+.oni-static-entry small{color:#ead9df!important}.oni-static-entry span{font-size:29px!important}
+.oni-static-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(25,12,18,.62);backdrop-filter:blur(8px);padding:18px;align-items:center;justify-content:center}
+.oni-static-overlay.show{display:flex}
+.oni-static-modal{width:min(720px,100%);max-height:calc(100dvh - 36px);overflow:auto;background:#fff;border-radius:24px;padding:20px;border:1px solid #ead7de;box-shadow:0 26px 80px rgba(35,10,20,.3)}
+.oni-static-modal h2{margin:0 0 6px}.oni-static-modal>p{margin:0;color:var(--muted);line-height:1.55}
+.oni-static-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:16px 0 12px}
+.oni-static-grid button{border:1px solid #e8d5dc;background:#fff;border-radius:14px;padding:12px 8px;min-height:68px;font-weight:900;color:#52313c}
+.oni-static-grid button b,.oni-static-grid button small{display:block}.oni-static-grid button small{margin-top:3px;color:#8a747b;font-size:10px}
+.oni-static-grid button.active{background:linear-gradient(145deg,#521c2e,#9c3658);border-color:#8e304e;color:#fff;box-shadow:0 8px 20px rgba(85,25,47,.2)}
+.oni-static-grid button.active small{color:#f0dce3}
+.oni-static-info{background:#fbf4f6;border:1px solid #ecdce1;border-radius:14px;padding:12px;line-height:1.55;color:#654651}
+.oni-static-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
+body.oni-mode #oniStaticEntry{display:none!important}
+@media(max-width:680px){.oni-static-grid{grid-template-columns:repeat(2,1fr)}.oni-static-grid button:last-child{grid-column:1/-1}.oni-static-actions{display:grid;grid-template-columns:1fr}.oni-static-actions button{width:100%}}
 
 </style>
 </head>
@@ -419,6 +437,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
 
  <section id="more" class="page">
   <div class="more-grid">
+   <button class="more-card oni-static-entry" id="oniStaticEntry" type="button" onclick="openOniEntryStatic()"><span>👹</span><b>오니 모드</b><small>N1+ 이상 초고급 전용</small></button>
    <button class="more-card" onclick="navTo('jlpt')"><span>🗺️</span><b>전체 로드맵</b><small>급수·단원별 진행</small></button>
    <button class="more-card" onclick="navTo('diagnosis')"><span>🩺</span><b>급수 진단</b><small>수준과 약점 분석</small></button>
    <button class="more-card" onclick="navTo('quizpage')"><span>🎯</span><b>퀴즈</b><small>실력 확인</small></button>
@@ -464,6 +483,22 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   <div class="reset-warning"><b>초기화되는 항목</b><br>XP · 레벨 · 정답/오답 · 학습 완료 항목 · 복습 상태 · 급수/영역별 진척도 · 최근 급수 진단 결과</div>
   <p class="muted small">JLPT 확장팩, 한국어 뜻 캐시, 한자 훈음 데이터는 삭제하지 않아.</p>
   <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="secondary" onclick="closeResetModal()">취소</button><button class="danger" onclick="confirmProgressReset()">정말 초기화</button></div>
+ </div>
+</div>
+
+<div class="oni-static-overlay" id="oniStaticOverlay" onclick="if(event.target===this)closeOniEntryStatic()">
+ <div class="oni-static-modal" role="dialog" aria-modal="true" aria-labelledby="oniStaticTitle">
+  <h2 id="oniStaticTitle">👹 오니 모드 입장</h2>
+  <p>N1+ 이후는 일반 커리큘럼과 분리된 초고급 과정이야. 한 단계만 골라 집중해서 공부해.</p>
+  <div class="oni-static-grid" id="oniStaticGrid">
+   <button type="button" data-static-oni="N1+"><b>N1+</b><small>N1 다음</small></button>
+   <button type="button" data-static-oni="MASTER I"><b>MASTER I</b><small>초고급 I</small></button>
+   <button type="button" data-static-oni="MASTER II"><b>MASTER II</b><small>초고급 II</small></button>
+   <button type="button" data-static-oni="MASTER III"><b>MASTER III</b><small>초고급 III</small></button>
+   <button type="button" data-static-oni="深淵"><b>深淵</b><small>심연</small></button>
+  </div>
+  <div class="oni-static-info" id="oniStaticInfo">N1+ · 현대 논설·학술·업무 문체 중심</div>
+  <div class="oni-static-actions"><button class="secondary" type="button" onclick="closeOniEntryStatic()">취소</button><button class="primary" type="button" onclick="confirmOniEntryStatic()">이 단계로 입장</button></div>
  </div>
 </div>
 
@@ -2723,8 +2758,54 @@ v9Init();
 
 </script>
 
+
+<script>
+(function(){
+ const ONI_INFO={
+  "N1+":"현대 논설·학술·업무 문체 중심",
+  "MASTER I":"저빈도 현대 문어·표외 읽기 중심",
+  "MASTER II":"고사성어·난해 사자숙어·한문투 중심",
+  "MASTER III":"저빈도 문학어·본격 고전 문법 중심",
+  "深淵":"고문헌·한문훈독·극희귀어 중심"
+ };
+ let selected="N1+";
+ try{
+  const saved=JSON.parse(localStorage.getItem("nmk_oni_mode")||"null");
+  if(saved&&ONI_INFO[saved.level])selected=saved.level;
+ }catch(e){}
+ function paint(){
+  document.querySelectorAll("[data-static-oni]").forEach(b=>b.classList.toggle("active",b.dataset.staticOni===selected));
+  const info=document.getElementById("oniStaticInfo");if(info)info.textContent=selected+" · "+ONI_INFO[selected];
+ }
+ window.openOniEntryStatic=function(){
+  const o=document.getElementById("oniStaticOverlay");if(!o)return;
+  paint();o.classList.add("show");document.body.style.overflow="hidden";
+ };
+ window.closeOniEntryStatic=function(){
+  document.getElementById("oniStaticOverlay")?.classList.remove("show");document.body.style.overflow="";
+ };
+ window.confirmOniEntryStatic=function(){
+  localStorage.setItem("nmk_oni_mode",JSON.stringify({enabled:true,level:selected}));
+  closeOniEntryStatic();
+  location.reload();
+ };
+ document.addEventListener("click",function(e){
+  const b=e.target.closest("[data-static-oni]");if(!b)return;
+  selected=b.dataset.staticOni;paint();
+ });
+ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeOniEntryStatic()});
+ document.addEventListener("DOMContentLoaded",()=>{
+   paint();
+   try{
+    const saved=JSON.parse(localStorage.getItem("nmk_oni_mode")||"null");
+    if(saved?.enabled)document.body.classList.add("oni-mode");
+   }catch(e){}
+ });
+})();
+</script>
+
 <script src="v10-vocab-data.js"></script>
 <script src="v10-grammar-data.js"></script>
-<script src="v10-core.js?v=10.2.0"></script>
+<script src="v10-core.js?v=10.2.1"></script>
 </body>
 </html>
