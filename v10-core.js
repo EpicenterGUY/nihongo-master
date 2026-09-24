@@ -728,4 +728,248 @@ updateUI();
 renderV103Guide();
 bindV103Primary();
 
+
+// ===== v10.4: reliable study + no typing + advanced expansion =====
+document.title="日本語 MASTER v10.4";
+
+// ---------- Large advanced data merge ----------
+function addV104Extras(){
+ const vv=globalThis.NMK_V104_VOCAB_EXTRA||[];
+ for(const row of vv){
+  const [level,term,reading,meaning,pos]=row;
+  if(DB.vocab.some(x=>x.term===term&&String(x.reading||"")===String(reading||"")))continue;
+  const e=(level==="N1+"||level==="MASTER I")?exFor(term,level):{ja:"",ko:""};
+  DB.vocab.push({
+   id:`v104_v_${level.replace(/\s/g,"_")}_${DB.vocab.length}`,
+   level,term,reading,meaning,pos,
+   example:e.ja,kr:e.ko,examples:e.ja?[e]:[],
+   nuance:`${META[level]?.label||level} 단계 어휘. 뜻뿐 아니라 읽기와 실제 문체를 함께 익혀.`,
+   sourceSensitive:level==="MASTER III"||level==="深淵"||/고사성어|사자숙어|고전어|한문어/.test(pos||""),
+   tags:[level,"v10.4확장",pos||"어휘"]
+  });
+ }
+ // Legacy MASTER kanji is now treated as MASTER III so every Oni tier can have its own kanji bank.
+ DB.kanji.forEach(x=>{if(x.level==="MASTER")x.level="MASTER III"});
+ const kk=globalThis.NMK_V104_KANJI_EXTRA||[];
+ for(const row of kk){
+  const [level,term,reading,meaning,words,note]=row;
+  if(DB.kanji.some(x=>x.term===term&&x.level===level))continue;
+  DB.kanji.push({
+   id:`v104_k_${level.replace(/\s/g,"_")}_${DB.kanji.length}`,
+   level,term,reading,meaning,words,note,
+   tags:[level,"고급한자","표외포함"]
+  });
+ }
+ const gg=globalThis.NMK_V104_GRAMMAR_EXTRA||[];
+ for(const row of gg){
+  const [level,term,meaning,form,nuance,example,kr]=row;
+  if(DB.grammar.some(x=>x.term===term&&x.level===level))continue;
+  DB.grammar.push({
+   id:`v104_g_${level.replace(/\s/g,"_")}_${DB.grammar.length}`,
+   level,term,meaning,form,nuance,example,kr,similar:"",
+   tags:[level,"v10.4문법"]
+  });
+ }
+}
+addV104Extras();
+
+// Exact tier filtering for the expanded Oni banks.
+getFiltered=function(type,level){
+ const arr=DB[type]||[];
+ if(oni.enabled)return arr.filter(x=>x.level===oni.level);
+ if(level&&level!=="전체")return arr.filter(x=>x.level===level&&NORMAL_LEVELS.includes(x.level));
+ return arr.filter(x=>NORMAL_LEVELS.includes(x.level));
+};
+counts=function(level){
+ return {
+  vocab:DB.vocab.filter(x=>x.level===level).length,
+  grammar:DB.grammar.filter(x=>x.level===level).length,
+  kanji:DB.kanji.filter(x=>x.level===level).length
+ };
+};
+
+// ---------- Friendly N5/N4 grammar explanations ----------
+const V104_GRAMMAR_HELP={
+ "～です":["명사나 な형용사 뒤에 붙여 문장을 정중하게 끝내는 가장 기본적인 표현이야.","자기소개·설명처럼 ‘A는 B입니다’라고 말할 때 써.","‘학생’ → 学生です처럼 그냥 뒤에 です를 붙이면 돼."],
+ "～ます":["동사를 정중하게 말하는 기본형이야.","처음 보는 사람과 말하거나 수업·가게 같은 정중한 상황에서 써.","食べる→食べます, 行く→行きます처럼 동사 모양이 바뀌어."],
+ "～ません":["ます체의 부정형, 즉 ‘~하지 않습니다’야.","정중하게 안 한다고 말할 때 써.","行きます→行きません처럼 ます를 ません으로 바꾼다고 생각하면 쉬워."],
+ "～ました":["ます체의 과거형, ‘~했습니다’야.","어제·아까처럼 이미 끝난 행동을 정중하게 말할 때 써.","食べます→食べました처럼 끝을 ました로 바꿔."],
+ "～ている":["‘지금 ~하는 중’뿐 아니라 ‘그 상태가 계속됨’도 나타내.","지금 하는 행동, 습관, 결혼하다→결혼해 있는 상태 같은 데 써.","먼저 て형을 만들고 いる를 붙여. 会う→会っている."],
+ "～てください":["상대에게 ‘~해 주세요’라고 부탁하는 표현이야.","명령보다 부드럽게 요청할 때 써.","동사 て형 + ください. 書く→書いてください."],
+ "～てもいい":["‘~해도 돼?’ ‘~해도 됩니다’처럼 허가를 나타내.","허락을 구하거나 허락해 줄 때 써.","て형 + もいい. 座る→座ってもいい."],
+ "～てはいけない":["‘~하면 안 된다’라는 금지 표현이야.","규칙이나 금지를 말할 때 써.","て형 + はいけない. 入る→入ってはいけない."],
+ "～たい":["내가 ‘~하고 싶다’고 말하는 표현이야.","자기 희망을 말할 때 가장 먼저 배우는 형태야.","ます를 떼고 たい를 붙여. 食べます→食べたい."],
+ "～から":["앞 문장을 이유로 삼아 ‘~하니까’라고 이어 줘.","이유를 비교적 직접적으로 말할 때 써.","이유 + から, 결과 순서로 기억하면 돼."],
+ "～ので":["‘~이므로’처럼 이유를 말하지만 から보다 부드러워.","상대를 배려하며 이유를 설명할 때 자주 써.","문장 + ので. 명사·な형용사는 なので가 되는 점을 기억해."],
+ "～より":["비교할 때 ‘~보다’의 기준을 표시해.","A보다 B가 크다 같은 비교에서 써.","A より B のほうが… 형태와 같이 외우면 편해."],
+ "～のほうが":["둘 중 ‘~쪽이 더’라는 뜻이야.","두 대상을 비교해 어느 쪽이 더 그렇다고 말할 때 써.","Aより Bのほうが + 형용사 형태가 기본 세트야."],
+ "～くなる":["い형용사의 상태가 ‘~해지다’라고 변할 때 써.","날씨·크기·속도처럼 상태 변화를 말할 때 써.","暑い→暑くなる처럼 い를 く로 바꾸고 なる."],
+ "～になる":["명사·な형용사가 ‘~이 되다/~해지다’로 변할 때 써.","직업·상태가 바뀌는 것을 말할 때 써.","学生になる, 静かになる처럼 に + なる."],
+ "～ことがある":["‘~한 적이 있다’라는 경험 표현이야.","여행·음식처럼 과거 경험 유무를 말할 때 써.","동사 た형 + ことがある. 行ったことがある."],
+ "～つもり":["‘~할 생각이다’라는 계획·의도 표현이야.","이미 마음속으로 정한 계획을 말할 때 써.","동사 사전형 + つもり. 行くつもり."],
+ "～前に":["‘~하기 전에’라는 시간 순서를 나타내.","A보다 B가 먼저 일어남을 말할 때 써.","동사 사전형 + 前に. 寝る前に."],
+ "～後で":["‘~한 뒤에’라는 시간 순서를 나타내.","A가 끝난 다음 B를 한다고 말할 때 써.","동사 た형 + 後で. 食べた後で."],
+ "～ながら":["‘~하면서’처럼 두 동작을 동시에 할 때 써.","음악을 들으며 걷는 것처럼 주 행동과 곁 행동이 함께 있을 때 써.","ます를 떼고 ながら. 聞きます→聞きながら."],
+ "～ようになる":["예전과 달리 ‘~하게 되다’라는 변화 표현이야.","능력이 생기거나 습관이 변했을 때 써.","話せるようになる처럼 변화 전후를 떠올려."],
+ "～ようにする":["스스로 노력해서 ‘~하도록 하다’라는 뜻이야.","새 습관을 만들거나 의식적으로 조심할 때 써.","毎日読むようにする = 매일 읽도록 한다."],
+ "～ことにする":["내가 결정해서 ‘~하기로 하다’라는 뜻이야.","자기 의지로 선택한 결정을 말할 때 써.","行くことにする = 가기로 한다."],
+ "～ことになる":["내가 아니라 상황·규칙에 의해 ‘~하게 되다’라는 뜻이야.","회사 결정·일정 확정처럼 외부에서 정해졌을 때 써.","行くことになった = 가게 되었다."],
+ "～そうだ（様態）":["눈으로 보고 ‘~할 것 같다’고 판단하는 표현이야.","비가 올 것 같거나 음식이 맛있어 보일 때 써.","降りそう, おいしそう처럼 겉모습을 보고 말해."],
+ "～そうだ（伝聞）":["남에게 들은 정보를 ‘~라고 한다’고 전하는 표현이야.","뉴스·소문·다른 사람의 말을 전달할 때 써.","보통형 문장 뒤에 そうだ를 그대로 붙여."],
+ "～たら":["‘~하면’이라는 조건과 ‘~했더니’라는 계기를 모두 만들 수 있어.","특정 상황이 실제로 일어난 뒤의 결과를 말할 때 특히 자주 써.","동사 た형 + ら. 行ったら."],
+ "～なら":["상대가 꺼낸 정보에 반응해 ‘~라면’이라고 조건을 붙여.","‘일본에 간다면 교토가 좋아’처럼 화제 기반 조언에 잘 써.","명사/보통형 + なら."],
+ "～ば":["일반적인 ‘~하면’ 조건형이야.","원인과 결과의 관계를 비교적 객관적으로 말할 때 써.","동사마다 가정형을 만들어 + ば. 行く→行けば."],
+ "～ても":["‘~해도’처럼 예상과 반대되는 결과를 이어 줘.","조건이 성립해도 결과가 달라지지 않을 때 써.","て형 + も. 雨が降っても行く."],
+ "～し":["이유나 특징을 ‘~하고, 게다가’처럼 여러 개 나열해.","이유가 하나가 아니라는 느낌을 줄 때 자연스러워.","普通形 + し를 반복할 수 있어."],
+ "～すぎる":["정도가 지나쳐 ‘너무 ~하다’라는 뜻이야.","먹기·비싸기·조용하기 등 무엇이 과도할 때 써.","食べます→食べすぎる, 高い→高すぎる."],
+ "～やすい":["‘~하기 쉽다’라는 뜻이야.","행동하기 편하거나 어떤 일이 잘 일어나는 성질을 말해.","ます를 떼고 やすい. 読みます→読みやすい."],
+ "～にくい":["‘~하기 어렵다’라는 뜻이야.","물리적·심리적으로 행동하기 어려울 때 써.","ます를 떼고 にくい. 読みにくい."],
+ "～始める":["‘~하기 시작하다’라는 뜻이야.","어떤 동작이 시작되는 시점을 말해.","ます를 떼고 始める. 降り始める."],
+ "～続ける":["‘계속 ~하다’라는 뜻이야.","같은 동작이 이어질 때 써.","ます를 떼고 続ける. 勉強し続ける."],
+ "～終わる":["‘~하기를 끝내다’라는 뜻이야.","동작이 완전히 끝났음을 말해.","ます를 떼고 終わる. 読み終わる."],
+ "～てみる":["‘시험 삼아 ~해 보다’라는 뜻이야.","처음 해 보거나 결과를 확인하려 시도할 때 써.","て형 + みる. 食べてみる."],
+ "～ておく":["나중을 위해 ‘미리 ~해 두다’라는 뜻이야.","준비·사전 조치에서 매우 자주 써.","て형 + おく. 予約しておく."],
+ "～てもらう":["다른 사람이 나를 위해 ‘~해 주는 것을 받다’라는 뜻이야.","누군가의 행동으로 내가 도움을 받았을 때 써.","사람に + て형 + もらう."]
+};
+function v104GrammarHelp(x){
+ const h=V104_GRAMMAR_HELP[x.term];
+ if(!h||!["N5","N4"].includes(x.level))return "";
+ return `<div class="v104-friendly-grammar">
+   <div><span>① 이 문법은 뭐야?</span><b>${escapeHtml(h[0])}</b></div>
+   <div><span>② 언제 써?</span><b>${escapeHtml(h[1])}</b></div>
+   <div><span>③ 만드는 법</span><b class="jp">${escapeHtml(x.form||"")}</b></div>
+   <div><span>④ 기억 팁</span><b>${escapeHtml(h[2])}</b></div>
+  </div>`;
+}
+
+const v104Style=document.createElement("style");
+v104Style.textContent=`
+.v104-friendly-grammar{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px}
+.v104-friendly-grammar>div{border:1px solid #eadfd4;background:#fffdf9;border-radius:14px;padding:12px;line-height:1.55}
+.v104-friendly-grammar span{display:block;color:var(--accent);font-size:12px;font-weight:950;margin-bottom:5px}
+.v104-friendly-grammar b{font-size:14px}
+.v104-recall{max-width:650px;margin:22px auto 0;text-align:center}
+.v104-recall-prompt{padding:18px;border:1px solid var(--line);border-radius:17px;background:#faf7f2}
+.v104-recall-answer{display:none;margin-top:11px;padding:15px;border-radius:16px;background:#f4faf7;border:1px solid #d8ece3;text-align:left}
+.v104-recall-answer.show{display:block}
+.v104-recall .rating{margin-top:11px}
+#studyStartBtn.v104-ready{position:relative}
+#studyStartBtn.v104-ready:active{transform:translateY(1px)}
+@media(max-width:620px){.v104-friendly-grammar{grid-template-columns:1fr}.lesson-stepper{grid-template-columns:repeat(3,1fr)!important}}
+`;
+document.head.appendChild(v104Style);
+
+// ---------- No-typing lesson flow ----------
+renderLearnCard=async function(){
+ const host=document.getElementById("learnSession");if(!host)return;
+ if(learnIndex>=learnDeck.length){
+  host.innerHTML=`<div class="card lesson-shell" style="text-align:center;padding:35px"><div style="font-size:56px">📚</div><h2>학습 완료</h2><p class="muted">${learnDeck.length}개를 설명 → 예문 → 기억 확인 순서로 봤어.</p><button class="primary" data-v104-finish="review">어려웠던 것 복습</button> <button class="secondary" data-v104-finish="quiz">퀴즈로 확인</button></div>`;
+  return;
+ }
+ lessonStage=1;lessonRecallChecked=false;
+ host.innerHTML=`<div class="lesson-shell">
+   <div class="lesson-stepper">
+    <button type="button" class="lesson-step active" data-v104-stage="1">1. 설명</button>
+    <button type="button" class="lesson-step" data-v104-stage="2">2. 예문</button>
+    <button type="button" class="lesson-step" data-v104-stage="3">3. 기억 확인</button>
+   </div>
+   <div class="card lesson-main" id="lessonMain"></div>
+  </div>`;
+ await showV104LessonStage(1);
+};
+
+async function showV104LessonStage(n){
+ lessonStage=n;
+ document.querySelectorAll(".lesson-step").forEach((b,i)=>b.classList.toggle("active",i===n-1));
+ const x=learnDeck[learnIndex];if(!x)return;
+ const type=x._type,ko=await ensureKoreanMeaning(x),main=document.getElementById("lessonMain");if(!main)return;
+ const progress=`<div style="display:flex;justify-content:space-between;align-items:center"><span class="badge">${escapeHtml(x.level)} · ${escapeHtml(names[type]||type)}</span><span class="muted">${learnIndex+1} / ${learnDeck.length}</span></div>`;
+ if(n===1){
+  let body="";
+  if(type==="grammar"){
+   const friendly=v104GrammarHelp(x);
+   body=`${friendly}<div class="lesson-explain"><b>핵심 뜻</b><br>${escapeHtml(ko)}<hr style="border:0;border-top:1px solid var(--line)"><b>접속</b><br><span class="jp">${escapeHtml(x.form||"")}</span>${friendly?"":`<hr style="border:0;border-top:1px solid var(--line)"><b>뉘앙스</b><br>${escapeHtml(x.nuance||"")}`}</div>`;
+  }else if(type==="kanji"){
+   body=`${hanjaKoHTML(x)}<div class="lesson-explain"><b>일본어 읽기</b><br><span class="jp">${escapeHtml(x.reading||"")}</span><br><br><b>관련 단어</b><br><span class="jp">${escapeHtml(x.words||"")}</span>${x.note?`<br><br><b>포인트</b><br>${escapeHtml(x.note)}`:""}</div>`;
+  }else{
+   body=`<div class="ko-meaning" style="text-align:center;margin-top:18px">${escapeHtml(ko)}</div><div class="lesson-explain"><b>읽기</b><br><span class="jp">${escapeHtml(x.reading||"")}</span>${x.pos?`<br><br><b>품사</b><br>${escapeHtml(x.pos)}`:""}${x.nuance?`<br><br><b>뉘앙스</b><br>${escapeHtml(x.nuance)}`:""}</div>`;
+  }
+  main.innerHTML=`${progress}<div class="lesson-title jp">${escapeHtml(x.term)}</div>${body}<div class="lesson-actions"><button type="button" class="secondary" data-v104-speak>🔊 발음 듣기</button><button type="button" class="primary" data-v104-stage="2">예문으로 →</button></div>`;
+ }else if(n===2){
+  const exKo=await ensureKoreanExample(x),ex=x.example||"";
+  let exHtml="";
+  if(ex){
+   exHtml=`<div class="lesson-explain"><div class="jp" style="font-size:22px;font-weight:850">${escapeHtml(ex)}</div><div style="margin-top:8px">${escapeHtml(exKo||"예문 해석 준비 중")}</div></div>`;
+  }else if(x.sourceSensitive){
+   exHtml='<div class="unsourced-example">📚 이 항목은 실제 문헌 용례를 확인한 뒤 예문을 표시해. 임의 예문은 만들지 않아.</div>';
+  }else{
+   exHtml='<div class="lesson-explain muted">이 항목은 예문 자료를 보강 중이야. 뜻·읽기부터 먼저 익혀도 돼.</div>';
+  }
+  main.innerHTML=`${progress}<h2>예문과 실제 쓰임</h2>${exHtml}${type==="grammar"?`<div class="lesson-explain"><b>핵심 뜻</b><br>${escapeHtml(ko)}<br><br><b>형태</b><br><span class="jp">${escapeHtml(x.form||"")}</span></div>`:""}<div class="lesson-actions"><button type="button" class="secondary" data-v104-stage="1">← 설명</button><button type="button" class="primary" data-v104-stage="3">기억 확인 →</button></div>`;
+ }else{
+  const prompt=type==="kanji"?"이 한자의 읽기와 뜻을 머릿속으로 떠올려 봐.":type==="grammar"?"이 문법의 뜻과 언제 쓰는지 머릿속으로 설명해 봐.":"이 단어의 읽기와 한국어 뜻을 머릿속으로 떠올려 봐.";
+  main.innerHTML=`${progress}<div class="v104-recall"><span class="badge">타이핑 없음 · 머릿속 회상</span><h2 style="margin:13px 0 7px">기억 확인</h2><p class="muted">${escapeHtml(prompt)}</p><div class="v104-recall-prompt"><div class="jp" style="font-size:${type==="kanji"?"64px":"34px"};font-weight:950">${escapeHtml(x.term)}</div></div><button type="button" class="primary" style="margin-top:12px" data-v104-reveal>정답 보기</button><div class="v104-recall-answer" id="v104RecallAnswer"><b>정답</b><div style="margin-top:7px;font-size:20px;font-weight:900">${escapeHtml(ko)}</div>${x.reading?`<div class="jp muted" style="margin-top:5px">${escapeHtml(x.reading)}</div>`:""}</div><div class="rating" id="v104Rating" style="display:none"><button type="button" class="again" data-v104-rate="1">↻ 다시</button><button type="button" class="hard" data-v104-rate="2">△ 애매함</button><button type="button" class="know" data-v104-rate="3">✓ 알겠음</button></div><div class="lesson-actions"><button type="button" class="secondary" data-v104-stage="2">← 예문</button></div></div>`;
+ }
+}
+showLessonStage=showV104LessonStage;
+
+document.addEventListener("click",e=>{
+ const stage=e.target.closest("[data-v104-stage]");if(stage){showV104LessonStage(+stage.dataset.v104Stage);return}
+ if(e.target.closest("[data-v104-speak]")){const x=learnDeck[learnIndex];if(x)speak(x.term);return}
+ if(e.target.closest("[data-v104-reveal]")){
+  document.getElementById("v104RecallAnswer")?.classList.add("show");
+  const r=document.getElementById("v104Rating");if(r)r.style.display="grid";
+  e.target.closest("[data-v104-reveal]").style.display="none";return;
+ }
+ const rate=e.target.closest("[data-v104-rate]");if(rate){rateLearn(+rate.dataset.v104Rate);return}
+ const finish=e.target.closest("[data-v104-finish]");if(finish){finish.dataset.v104Finish==="review"?startReviewMode("all"):v103QuickQuiz();return}
+});
+
+// Roadmap copy must match the no-typing lesson.
+if(typeof openRoadCategory==="function"){
+ const v104RoadBase=openRoadCategory;
+ openRoadCategory=function(...args){
+  v104RoadBase(...args);
+  const p=document.getElementById("roadChapterPanel");
+  if(p)p.innerHTML=p.innerHTML.replaceAll("설명 → 예문 → 회상 → 직접 입력 → 복습","설명 → 예문 → 기억 확인 → 복습");
+ };
+}
+
+// ---------- Reliable study-start button ----------
+const v104StartLearnBase=startLearn;
+startLearn=function(forceCat){
+ try{
+  v104StartLearnBase(forceCat);
+  setTimeout(()=>{
+   const h=document.getElementById("learnSession");
+   if(h&&h.innerHTML.trim())h.scrollIntoView({behavior:"smooth",block:"start"});
+  },50);
+ }catch(err){
+  toast("학습을 시작하지 못했어. 설정을 다시 불러왔어.");
+  console.error(err);
+  try{configureSelectors()}catch(e){}
+ }
+};
+function bindV104StudyStart(){
+ const btn=document.getElementById("studyStartBtn");if(!btn||btn.dataset.v104Bound)return;
+ btn.dataset.v104Bound="1";btn.classList.add("v104-ready");btn.removeAttribute("onclick");
+ btn.addEventListener("click",e=>{
+  e.preventDefault();
+  if(studyView==="table"){renderTableTools();renderVocabTable();document.getElementById("learnSession")?.scrollIntoView({behavior:"smooth",block:"start"});}
+  else startLearn();
+ });
+}
+bindV104StudyStart();
+const v104SetStudyView=setStudyView;
+setStudyView=function(v){v104SetStudyView(v);bindV104StudyStart()};
+
+// Keep advanced counts/UI fresh after the new data arrives.
+try{auditDifficulty()}catch(e){}
+try{configureSelectors()}catch(e){}
+try{renderLibrary()}catch(e){}
+try{renderOniCard()}catch(e){}
+try{renderV103Guide()}catch(e){}
+try{updateUI()}catch(e){}
+bindV104StudyStart();
+
 })();
