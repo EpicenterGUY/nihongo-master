@@ -361,6 +361,7 @@ document.addEventListener("click",e=>{
 
 function syncV101OniUI(){
  ensureV101OniSurfaces();bindV101SideNav();
+ const versionBadge=document.querySelector(".brand .badge");if(versionBadge)versionBadge.textContent=oni.enabled?`鬼 ${oni.level}`:"v10.1";
  const learnLock=document.getElementById("oniLearnLock"),quizLock=document.getElementById("oniQuizLock");if(learnLock)learnLock.textContent=\`👹 \${oni.level}\`;if(quizLock)quizLock.textContent=\`👹 \${oni.level}\`;
  const chip=document.querySelector("#home .reco-chip");if(chip)chip.textContent=oni.enabled?"鬼級 전용 코스":"오늘의 일본어";
  const heroStart=document.querySelector("#home .hero-start");if(heroStart)heroStart.textContent=oni.enabled?"오니 학습 시작":"오늘 공부 시작";
