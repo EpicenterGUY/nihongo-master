@@ -404,4 +404,142 @@ getFiltered=function(type,level){
 // Ensure stale inline controls and newly replaced navigation are usable immediately.
 applyMode();syncV101OniUI();renderOniCard();bindV101SideNav();
 
+
+// ===== v10.2: library scroll + Oni gateway =====
+document.title="日本語 MASTER v10.2";
+
+const v102Style=document.createElement("style");
+v102Style.textContent=\`
+/* v10.2 — one-page scroll on mobile, Oni gateway only in normal mode */
+#library .study-grid{align-items:start}
+#library .library-more-wrap{display:flex;justify-content:center;padding:12px 0 2px}
+#library .library-more{min-width:180px}
+#library .library-result-count{font-size:12px;color:var(--muted);margin:-3px 0 10px}
+#library .library-back{display:none;margin-top:12px;width:100%}
+.oni-entry-card{background:linear-gradient(145deg,#321923,#6b263f)!important;color:#fff!important;border-color:#643147!important;box-shadow:0 10px 26px rgba(80,23,45,.18)}
+.oni-entry-card small{color:#ead7de!important}
+.oni-entry-card b{font-size:18px!important}
+.oni-entry-card span{font-size:30px!important}
+.oni-entry-overlay{display:none;position:fixed;inset:0;z-index:350;background:rgba(22,12,17,.58);backdrop-filter:blur(8px);padding:18px;align-items:center;justify-content:center}
+.oni-entry-overlay.show{display:flex}
+.oni-entry-modal{width:min(760px,100%);max-height:min(760px,calc(100dvh - 36px));overflow:auto;background:#fff;border:1px solid #ead7dd;border-radius:25px;padding:20px;box-shadow:0 28px 80px rgba(30,10,20,.28)}
+.oni-entry-modal h2{margin:0 0 5px;font-size:25px}.oni-entry-modal p{margin:0;color:var(--muted);line-height:1.55}
+.oni-entry-modal .oni-tier-grid{margin-top:16px}
+.oni-entry-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+body:not(.oni-mode) #oniSettingsCard{display:none!important}
+body.oni-mode .oni-entry-card{display:none!important}
+@media(min-width:1001px){
+ #library .list{max-height:calc(100dvh - 245px)!important;overflow-y:auto!important;overscroll-behavior:contain;scrollbar-gutter:stable}
+ #library .detail{position:sticky;top:14px;max-height:calc(100dvh - 120px);overflow:auto}
+}
+@media(max-width:1000px){
+ #library .study-grid{display:block!important}
+ #library .list{max-height:none!important;height:auto!important;overflow:visible!important;overscroll-behavior:auto!important;touch-action:pan-y!important;-webkit-overflow-scrolling:auto!important}
+ #library .detail{position:static!important;max-height:none!important;overflow:visible!important;margin-top:12px}
+ #library .library-back{display:block}
+ #libraryContent{overflow:visible!important;touch-action:pan-y}
+ #library .item{touch-action:manipulation}
+}
+@media(max-width:620px){
+ .oni-entry-modal{padding:16px;border-radius:21px}
+ .oni-entry-actions{display:grid;grid-template-columns:1fr}.oni-entry-actions button{width:100%}
+}
+\`;
+document.head.appendChild(v102Style);
+
+let v102LibraryVisible=40;
+let v102LibraryKey="";
+const v102BaseRenderLibrary=renderLibrary;
+renderLibrary=function(){
+ const level=document.getElementById("libLevel")?.value||"전체";
+ const q=(document.getElementById("libFilter")?.value||"").toLowerCase();
+ const coreType=["vocab","grammar","kanji"].includes(libType);
+ if(!coreType){v102BaseRenderLibrary();return}
+ let arr=getFiltered(libType,level).filter(x=>JSON.stringify(x).toLowerCase().includes(q));
+ const key=[oni.enabled?"oni":"normal",oni.enabled?oni.level:"",libType,level,q].join("|");
+ if(key!==v102LibraryKey){v102LibraryKey=key;v102LibraryVisible=40}
+ const mobile=matchMedia("(max-width:1000px)").matches;
+ const shown=mobile?arr.slice(0,v102LibraryVisible):arr;
+ const rows=shown.map((x,i)=>\`<div class="item \${i===0?"active":""}" data-lib-item="1" onclick="openDetail('\${libType}','\${x.id}',this)"><b class="jp">\${escapeHtml(x.term)}</b><br><small>\${escapeHtml(listSubText(x,libType))}</small></div>\`).join("");
+ const more=mobile&&shown.length<arr.length?\`<div class="library-more-wrap"><button type="button" class="secondary library-more" data-library-more>더 보기 · \${shown.length}/\${arr.length}</button></div>\`:"";
+ const host=document.getElementById("libraryContent");if(!host)return;
+ host.innerHTML=\`<div class="library-result-count">\${arr.length}개 자료\${mobile&&arr.length>shown.length?\` · 처음 \${shown.length}개 표시\`:""}</div><div class="study-grid"><div class="card list">\${rows||'<span class="muted">항목 없음</span>'}\${more}</div><div class="card detail" id="detail">\${arr[0]?'<span class="muted">항목을 불러오는 중...</span>':'<span class="muted">항목을 선택해줘.</span>'}</div></div>\`;
+ if(arr[0])renderDetailAsync(arr[0],libType);
+ if(level&&level!=="전체"&&(libType==="vocab"||libType==="grammar"))scheduleKoreanWarmup(level);
+};
+
+document.addEventListener("click",e=>{
+ const more=e.target.closest("[data-library-more]");
+ if(more){e.preventDefault();v102LibraryVisible+=40;renderLibrary();return}
+ const back=e.target.closest("[data-library-back]");
+ if(back){e.preventDefault();document.querySelector("#library .list")?.scrollIntoView({behavior:"smooth",block:"start"});return}
+});
+
+const v102Detail=renderDetailAsync;
+renderDetailAsync=async function(x,type){
+ await v102Detail(x,type);
+ if(!matchMedia("(max-width:1000px)").matches)return;
+ const el=document.getElementById("detail");if(!el||el.querySelector("[data-library-back]"))return;
+ const b=document.createElement("button");b.type="button";b.className="secondary library-back";b.dataset.libraryBack="1";b.textContent="↑ 목록으로 돌아가기";el.appendChild(b);
+};
+
+const v102OpenDetail=openDetail;
+openDetail=function(type,id,el){
+ v102OpenDetail(type,id,el);
+ if(matchMedia("(max-width:1000px)").matches)setTimeout(()=>document.getElementById("detail")?.scrollIntoView({behavior:"smooth",block:"start"}),30);
+};
+
+// Normal mode gets only one clear gateway button; the full Oni configuration is visible only after entering Oni mode.
+function ensureV102OniGateway(){
+ const grid=document.querySelector("#more .more-grid");
+ if(grid&&!document.getElementById("oniEntryCard")){
+  const b=document.createElement("button");b.type="button";b.id="oniEntryCard";b.className="more-card oni-entry-card";b.dataset.oniEntry="1";
+  b.innerHTML='<span>👹</span><b>오니 모드</b><small>N1+ 이상 초고급 전용</small>';
+  grid.prepend(b);
+ }
+ if(!document.getElementById("oniEntryOverlay")){
+  const o=document.createElement("div");o.id="oniEntryOverlay";o.className="oni-entry-overlay";
+  o.innerHTML=\`<div class="oni-entry-modal" role="dialog" aria-modal="true" aria-labelledby="oniEntryTitle"><h2 id="oniEntryTitle">👹 오니 모드 입장</h2><p>N1+ 이후는 일반 커리큘럼과 분리돼 있어. 한 난이도만 골라 그 단계만 집중해서 공부해.</p><div class="oni-tier-grid">\${ONI_LEVELS.map(l=>\`<button type="button" class="oni-tier-btn" data-oni-modal-pick="\${l}"><span>\${l}</span><small>\${META[l].label}</small></button>\`).join("")}</div><div id="oniModalInfo" class="oni-level-info"></div><div class="oni-entry-actions"><button type="button" class="secondary" data-oni-modal-close>취소</button><button type="button" class="oni-enter" data-oni-modal-enter>선택한 난이도로 입장</button></div></div>\`;
+  document.body.appendChild(o);
+ }
+}
+ensureV102OniGateway();
+
+function renderV102OniModal(){
+ const overlay=document.getElementById("oniEntryOverlay");if(!overlay)return;
+ let level=overlay.dataset.level||oni.level||"N1+";
+ if(!ONI_LEVELS.includes(level))level="N1+";
+ overlay.dataset.level=level;
+ overlay.querySelectorAll("[data-oni-modal-pick]").forEach(b=>b.classList.toggle("active",b.dataset.oniModalPick===level));
+ const c=counts(level),m=META[level],info=overlay.querySelector("#oniModalInfo");
+ if(info)info.innerHTML=\`<div><span class="muted small">어휘</span><b>\${c.vocab}</b></div><div><span class="muted small">문법</span><b>\${c.grammar}</b></div><div><span class="muted small">단계</span><b style="font-size:14px">\${escapeHtml(m.label)}</b></div><div style="grid-column:1/-1"><span class="muted small">난도 기준</span><div style="margin-top:4px;line-height:1.55">\${escapeHtml(m.desc)}</div></div>\`;
+}
+function openV102OniModal(){
+ ensureV102OniGateway();const o=document.getElementById("oniEntryOverlay");if(!o)return;
+ o.dataset.level=oni.level||"N1+";renderV102OniModal();o.classList.add("show");document.body.style.overflow="hidden";
+}
+function closeV102OniModal(){document.getElementById("oniEntryOverlay")?.classList.remove("show");document.body.style.overflow=""}
+
+document.addEventListener("click",e=>{
+ if(e.target.closest("[data-oni-entry]")){e.preventDefault();openV102OniModal();return}
+ const pick=e.target.closest("[data-oni-modal-pick]");if(pick){document.getElementById("oniEntryOverlay").dataset.level=pick.dataset.oniModalPick;renderV102OniModal();return}
+ if(e.target.closest("[data-oni-modal-close]")){closeV102OniModal();return}
+ if(e.target.closest("[data-oni-modal-enter]")){const level=document.getElementById("oniEntryOverlay")?.dataset.level||"N1+";closeV102OniModal();enterOni(level);return}
+ if(e.target.id==="oniEntryOverlay")closeV102OniModal();
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.getElementById("oniEntryOverlay")?.classList.contains("show"))closeV102OniModal()});
+
+function syncV102Gateway(){
+ ensureV102OniGateway();
+ const card=document.getElementById("oniSettingsCard");if(card)card.style.display=oni.enabled?"block":"none";
+ const entry=document.getElementById("oniEntryCard");if(entry)entry.style.display=oni.enabled?"none":"";
+ const badge=document.querySelector(".brand .badge");if(badge)badge.textContent=oni.enabled?\`鬼 \${oni.level}\`:"v10.2";
+}
+const v102Apply=applyMode;
+applyMode=function(){v102Apply();syncV102Gateway()};
+const v102Nav=navTo;
+navTo=function(id){v102Nav(id);syncV102Gateway();if(id==="library"){v102LibraryVisible=40;v102LibraryKey="";renderLibrary()}};
+syncV102Gateway();
+renderLibrary();
+
 })();
