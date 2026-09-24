@@ -1,5 +1,5 @@
 {
-  "version": "10.3.0",
+  "version": "10.4.0",
   "channel": "stable",
   "entry": "index.html",
   "updated": "2026-09-25",
@@ -12,6 +12,12 @@
     "library-scroll-fix",
     "oni-gateway-ui",
     "guided-study-home",
-    "daily-three-step-route"
+    "daily-three-step-route",
+    "reliable-study-start",
+    "no-typing-study-flow",
+    "friendly-beginner-grammar",
+    "large-n1plus-vocab-expansion",
+    "oni-advanced-kanji",
+    "oni-advanced-grammar"
   ]
 }
