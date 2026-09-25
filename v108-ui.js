@@ -11,9 +11,10 @@ let jlptTarget=(()=>{
 })();
 
 function esc(s){return typeof escapeHtml==="function"?escapeHtml(s):String(s??"")}
-function targetLevel(){return (typeof oni!=="undefined"&&oni.enabled)?oni.level:jlptTarget}
+function oniState(){try{return globalThis.nmkGetOniState?.()||{enabled:false,level:"N1+"}}catch(e){return {enabled:false,level:"N1+"}}}
+function targetLevel(){const o=oniState();return o.enabled?o.level:jlptTarget}
 function setUnderlyingTarget(){
- if(typeof oni!=="undefined"&&oni.enabled)return;
+ if(oniState().enabled)return;
  ["learnLevel","quizLevel","libLevel"].forEach(id=>{
    const el=document.getElementById(id);
    if(el&&[...el.options].some(o=>o.value===jlptTarget))el.value=jlptTarget;
@@ -83,7 +84,7 @@ function renderJLPTDashboard(){
  if(!home)return;
  home.dataset.v103="1";
  home.className="v108-dashboard";
- const oniOn=typeof oni!=="undefined"&&oni.enabled;
+ const oniOn=oniState().enabled;
  const level=targetLevel();
  const rev=targetReviewItems().length;
  const weak=weakestCat(level);
@@ -190,7 +191,7 @@ function ensureLearnUI(){
 function renderLearnSetup(){
  ensureLearnUI();
  const box=document.getElementById("v108LearnSetup");if(!box)return;
- const oniOn=typeof oni!=="undefined"&&oni.enabled,level=targetLevel();
+ const oniOn=oniState().enabled,level=targetLevel();
  const currentCat=document.getElementById("learnCat")?.value||"mixed";
  const size=document.getElementById("learnSize")?.value||"10";
  box.innerHTML=`
@@ -243,7 +244,7 @@ function renderQuizSetup(){
  ensureQuizUI();
  const box=document.getElementById("v108QuizSetup");if(!box)return;
  const level=targetLevel(),cat=document.getElementById("quizCat")?.value||"mixed",size=document.getElementById("quizSize")?.value||"10";
- box.innerHTML=`<div class="v108-quiz-top"><div><span class="v108-label">${typeof oni!=="undefined"&&oni.enabled?"鬼級":"목표 급수"}</span><b>${esc(level)}</b></div><span>정답은 바로 표시돼</span></div>
+ box.innerHTML=`<div class="v108-quiz-top"><div><span class="v108-label">${oniState().enabled?"鬼級":"목표 급수"}</span><b>${esc(level)}</b></div><span>정답은 바로 표시돼</span></div>
  <div class="v108-quiz-options"><div><span>출제 영역</span><div class="v108-inline-choices">${["mixed","vocab","grammar","kanji"].map(c=>`<button class="${cat===c?"active":""}" data-v108-qcat="${c}">${CAT_UI[c].name}</button>`).join("")}</div></div>
  <div><span>문항 수</span><div class="v108-inline-choices">${["10","20","30"].map(n=>`<button class="${size===n?"active":""}" data-v108-qsize="${n}">${n}문제</button>`).join("")}</div></div></div>
  <button type="button" class="primary v108-full-start" data-v108-qstart>문제풀이 시작 →</button>`;
@@ -298,7 +299,7 @@ function simplifyMore(){
 }
 
 function syncTargetToPages(){
- if(!(typeof oni!=="undefined"&&oni.enabled))setUnderlyingTarget();
+ if(!(oniState().enabled))setUnderlyingTarget();
  renderJLPTDashboard();renderLearnSetup();renderQuizSetup();
 }
 function init108(){
@@ -310,7 +311,7 @@ document.addEventListener("click",e=>{
  if(e.target.closest("[data-v108-primary]")){startPrimary();return}
  const s=e.target.closest("[data-v108-study]");if(s){startTargetStudy(s.dataset.v108Study,10);return}
  if(e.target.closest("[data-v108-test]")){startTargetQuiz();return}
- const n=e.target.closest("[data-v108-nav]");if(n){if(n.dataset.v108Nav==="jlpt"){try{setRoad(jlptTarget,document.querySelector("#roadLevels .level-chip"))}catch(e){} }navTo(n.dataset.v108Nav);return}
+ const n=e.target.closest("[data-v108-nav]");if(n){if(n.dataset.v108Nav==="jlpt"){try{roadLevel=jlptTarget;renderRoad();document.querySelectorAll("#roadLevels .level-chip").forEach(b=>b.classList.toggle("active",(b.textContent||"").trim()===jlptTarget))}catch(e){} }navTo(n.dataset.v108Nav);return}
  const c=e.target.closest("[data-v108-cat]");if(c){const el=document.getElementById("learnCat");if(el)el.value=c.dataset.v108Cat;renderLearnSetup();return}
  const z=e.target.closest("[data-v108-size]");if(z){const el=document.getElementById("learnSize");if(el)el.value=z.dataset.v108Size;renderLearnSetup();return}
  if(e.target.closest("[data-v108-start]")){const c=document.getElementById("learnCat")?.value||"mixed",size=+(document.getElementById("learnSize")?.value||10);startTargetStudy(c,size);return}
