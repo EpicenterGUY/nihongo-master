@@ -1,4 +1,4 @@
-// 日本語 MASTER PWA helper v10.8.0
+// 日本語 MASTER PWA helper v10.8.1
 (()=>{
 "use strict";
 let deferredInstall=null;
@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 if("serviceWorker" in navigator){
  window.addEventListener("load",async()=>{
   try{
-   const reg=await navigator.serviceWorker.register("./sw.js?v=10.8.0",{scope:"./"});
+   const reg=await navigator.serviceWorker.register("./sw.js?v=10.8.1",{scope:"./"});
    await reg.update().catch(()=>{});
    const check=()=>reg.update().catch(()=>{});
    document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")check()});
