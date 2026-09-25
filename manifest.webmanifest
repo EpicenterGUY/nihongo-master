@@ -1,0 +1,34 @@
+{
+  "id": "./",
+  "name": "日本語 MASTER",
+  "short_name": "日本語 MASTER",
+  "description": "한국어 사용자를 위한 N5부터 N1, 오니 초고급까지의 일본어 학습 앱",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#fff8ef",
+  "theme_color": "#ff7858",
+  "categories": [
+    "education"
+  ],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
