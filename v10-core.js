@@ -1242,4 +1242,172 @@ try{renderV103Guide()}catch(e){}
 try{renderLibrary()}catch(e){}
 try{updateUI()}catch(e){}
 
+
+// ===== v10.6: POS memorization tables + Oni field filters =====
+document.title="日本語 MASTER v10.6";
+
+let tableDomainFilter="all";
+const V106_POS=[
+ ["전체","전체"],
+ ["명사","명사"],
+ ["동사","동사"],
+ ["い형용사","い형용사"],
+ ["な형용사","な형용사"],
+ ["부사","부사"],
+ ["기타","표현·기타"]
+];
+
+function v106Domain(x){
+ const p=String(x.pos||"");
+ const tags=Array.isArray(x.tags)?x.tags.join(" "):String(x.tags||"");
+ const blob=(p+" "+tags+" "+String(x.nuance||"")+" "+String(x.meaning||""));
+ if(/불교/.test(blob))return "buddhist";
+ if(/법률|행정|공문|계약|채무|재판|소송/.test(blob))return "law";
+ if(/학술|통계|철학|연구|이론|논리|비평/.test(blob))return "academic";
+ if(/사자숙어|고사성어|고사/.test(blob))return "idiom";
+ if(/고전|한문|훈독|문헌|고문/.test(blob))return "classical";
+ if(/문학|문예|수사|시문/.test(blob)||x.level==="MASTER I"||x.level==="MASTER III")return "literary";
+ return "modern";
+}
+const V106_DOMAIN_LABELS={
+ all:"전체 분야",modern:"현대·논설",academic:"학술",law:"법률·행정",
+ literary:"문학·문어",idiom:"사자숙어·고사",classical:"고전·한문",buddhist:"불교"
+};
+
+function v106BaseTablePool(){
+ const level=document.getElementById("learnLevel")?.value||"N5";
+ const pos=document.getElementById("learnPos")?.value||"전체";
+ let arr=[...getFiltered("vocab",level)];
+ if(pos!=="전체")arr=arr.filter(x=>normalizedPos(x)===pos);
+ if(oni.enabled&&tableDomainFilter!=="all")arr=arr.filter(x=>v106Domain(x)===tableDomainFilter);
+ if(tableStatusFilter==="new")arr=arr.filter(x=>!state.seen[x.id]?.count);
+ if(tableStatusFilter==="again")arr=arr.filter(x=>(state.seen[x.id]?.rating||0)===1);
+ if(tableStatusFilter==="hard")arr=arr.filter(x=>(state.seen[x.id]?.rating||0)===2);
+ if(tableStatusFilter==="known")arr=arr.filter(x=>(state.seen[x.id]?.rating||0)>=3);
+ if(tableStatusFilter==="star")arr=arr.filter(x=>state.starred[x.id]);
+ if(tableSort==="smart")arr.sort((a,b)=>(state.seen[a.id]?.count||0)-(state.seen[b.id]?.count||0)||(state.seen[a.id]?.rating||0)-(state.seen[b.id]?.rating||0));
+ if(tableSort==="hard")arr.sort((a,b)=>(state.seen[a.id]?.rating||0)-(state.seen[b.id]?.rating||0));
+ if(tableSort==="term")arr.sort((a,b)=>String(a.term).localeCompare(String(b.term),"ja"));
+ if(tableSort==="random")arr=shuffle(arr);
+ if(tableSort==="star")arr.sort((a,b)=>(state.starred[b.id]?1:0)-(state.starred[a.id]?1:0));
+ return arr;
+}
+tablePool=v106BaseTablePool;
+
+function v106PosCounts(){
+ const level=document.getElementById("learnLevel")?.value||"N5";
+ let base=[...getFiltered("vocab",level)];
+ if(oni.enabled&&tableDomainFilter!=="all")base=base.filter(x=>v106Domain(x)===tableDomainFilter);
+ const c={전체:base.length,명사:0,동사:0,"い형용사":0,"な형용사":0,부사:0,기타:0};
+ base.forEach(x=>{const p=normalizedPos(x);c[p]=(c[p]||0)+1});
+ return c;
+}
+function v106DomainCounts(){
+ const level=document.getElementById("learnLevel")?.value||"N5";
+ const base=[...getFiltered("vocab",level)];
+ const c={all:base.length,modern:0,academic:0,law:0,literary:0,idiom:0,classical:0,buddhist:0};
+ base.forEach(x=>{const d=v106Domain(x);c[d]=(c[d]||0)+1});
+ return c;
+}
+function setV106Pos(pos){
+ const el=document.getElementById("learnPos");if(el)el.value=pos;
+ tablePage=0;renderTableTools();renderVocabTable();
+}
+function setV106Domain(domain){
+ tableDomainFilter=domain;tablePage=0;renderTableTools();renderVocabTable();
+}
+globalThis.setV106Pos=setV106Pos;
+globalThis.setV106Domain=setV106Domain;
+
+renderTableTools=function(){
+ const el=document.getElementById("tableTools");if(!el)return;
+ const pos=document.getElementById("learnPos")?.value||"전체",pc=v106PosCounts(),dc=v106DomainCounts();
+ const posChips=V106_POS.map(([value,label])=>`<button type="button" class="v106-filter-chip ${pos===value?"active":""}" onclick="setV106Pos('${value}')"><span>${label}</span><b>${pc[value]||0}</b></button>`).join("");
+ const domains=oni.enabled?Object.keys(V106_DOMAIN_LABELS).filter(k=>k==="all"||(dc[k]||0)>0):[];
+ const domainHtml=oni.enabled?`<div class="v106-filter-section"><div class="v106-filter-label">사용 분야</div><div class="v106-chip-scroll">${domains.map(k=>`<button type="button" class="v106-domain-chip ${tableDomainFilter===k?"active":""}" onclick="setV106Domain('${k}')">${V106_DOMAIN_LABELS[k]} <b>${dc[k]||0}</b></button>`).join("")}</div></div>`:"";
+ el.innerHTML=`
+  <div class="v106-table-head">
+   <div><b>품사별 암기표</b><small>원하는 품사만 골라 빠르게 훑어봐.</small></div>
+   <span class="v106-current">${pos==="전체"?"전체 어휘":V106_POS.find(x=>x[0]===pos)?.[1]||pos}</span>
+  </div>
+  <div class="v106-filter-section"><div class="v106-filter-label">품사</div><div class="v106-chip-scroll">${posChips}</div></div>
+  ${domainHtml}
+  <div class="table-toolbar v106-table-toolbar">
+   <button class="secondary" onclick="toggleTableMask('meaning')">${tableHideMeaning?"👁 뜻 보이기":"🙈 뜻 가리기"}</button>
+   <button class="secondary" onclick="toggleTableMask('reading')">${tableHideReading?"👁 읽기 보이기":"🙈 읽기 가리기"}</button>
+   <select onchange="tableStatusFilter=this.value;tablePage=0;renderVocabTable()">
+    <option value="all" ${tableStatusFilter==="all"?"selected":""}>상태 전체</option>
+    <option value="new" ${tableStatusFilter==="new"?"selected":""}>미학습</option>
+    <option value="again" ${tableStatusFilter==="again"?"selected":""}>모름</option>
+    <option value="hard" ${tableStatusFilter==="hard"?"selected":""}>애매함</option>
+    <option value="known" ${tableStatusFilter==="known"?"selected":""}>숙달</option>
+    <option value="star" ${tableStatusFilter==="star"?"selected":""}>★ 집중</option>
+   </select>
+   <select onchange="tableSort=this.value;tablePage=0;renderVocabTable()">
+    <option value="smart" ${tableSort==="smart"?"selected":""}>추천순</option>
+    <option value="hard" ${tableSort==="hard"?"selected":""}>어려운순</option>
+    <option value="term" ${tableSort==="term"?"selected":""}>일본어순</option>
+    <option value="random" ${tableSort==="random"?"selected":""}>무작위</option>
+    <option value="star" ${tableSort==="star"?"selected":""}>별표순</option>
+   </select>
+   <select onchange="tablePageSize=+this.value;tablePage=0;renderVocabTable()">
+    <option ${tablePageSize===20?"selected":""}>20</option>
+    <option ${tablePageSize===30?"selected":""}>30</option>
+    <option ${tablePageSize===50?"selected":""}>50</option>
+    <option ${tablePageSize===100?"selected":""}>100</option>
+   </select>
+   <span class="table-stat" id="tableStat"></span>
+  </div>`;
+};
+
+const v106OldSetStudyView=setStudyView;
+setStudyView=function(v){
+ v106OldSetStudyView(v);
+ if(v==="table"){
+  const pos=document.getElementById("learnPos");if(pos)pos.style.display="none";
+  renderTableTools();
+ }
+};
+const v106OldStudyChanged=v9StudyControlChanged;
+v9StudyControlChanged=function(){
+ if(studyView==="table"&&document.getElementById("learnCat")?.value!=="vocab")document.getElementById("learnCat").value="vocab";
+ updatePosFilterVisibility();
+ if(studyView==="table"){
+  const p=document.getElementById("learnPos");if(p)p.style.display="none";
+  tablePage=0;renderTableTools();renderVocabTable();
+ }else v106OldStudyChanged();
+};
+
+// Reset field filter when changing Oni tier so a zero-result field cannot remain selected.
+const v106ApplyMode=applyMode;
+applyMode=function(){
+ tableDomainFilter="all";
+ v106ApplyMode();
+ if(studyView==="table"){renderTableTools();renderVocabTable()}
+};
+
+const v106Style=document.createElement("style");
+v106Style.textContent=`
+.v106-table-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}
+.v106-table-head>div>b{display:block;font-size:17px}.v106-table-head>div>small{display:block;color:var(--muted);margin-top:3px}
+.v106-current{border-radius:999px;padding:6px 9px;background:#eef1ff;color:#5369ca;font-size:11px;font-weight:950;white-space:nowrap}
+.v106-filter-section{margin-top:9px}.v106-filter-label{font-size:11px;font-weight:950;color:var(--muted);margin-bottom:6px}
+.v106-chip-scroll{display:flex;gap:6px;overflow-x:auto;padding:1px 1px 5px;scrollbar-width:none;-webkit-overflow-scrolling:touch}.v106-chip-scroll::-webkit-scrollbar{display:none}
+.v106-filter-chip,.v106-domain-chip{flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 10px;font-weight:900;white-space:nowrap}
+.v106-filter-chip b,.v106-domain-chip b{font-size:10px;color:var(--muted);margin-left:4px}
+.v106-filter-chip.active{background:#25262a;color:#fff;border-color:#25262a}.v106-filter-chip.active b{color:#ddd}
+.v106-domain-chip.active{background:#f2e4e9;color:#7e2946;border-color:#dfb9c6}.v106-domain-chip.active b{color:#9a5169}
+body.oni-mode .v106-current{background:#f2e4e9;color:#7e2946}
+body.oni-mode .v106-filter-chip.active{background:#6d243d;border-color:#6d243d}
+.v106-table-toolbar{padding-top:10px;border-top:1px solid var(--line);margin-top:8px}
+@media(max-width:680px){
+ .v106-table-head{align-items:flex-start}.v106-table-head>div>small{max-width:260px}
+ .v106-filter-chip,.v106-domain-chip{padding:8px 11px}
+ .v106-table-toolbar select{flex:1 1 130px}
+}
+`;
+document.head.appendChild(v106Style);
+
+if(studyView==="table"){renderTableTools();renderVocabTable()}
+
 })();
