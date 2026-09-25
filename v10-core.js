@@ -307,6 +307,7 @@ upgradeV101OniCard();
 globalThis.enterOniFromSetting=()=>enterOni(document.getElementById("oniLevelSelect")?.value||oni.level||"N1+");
 globalThis.exitOniMode=()=>exitOni();
 globalThis.nmkEnterOni=(level)=>enterOni(ONI_LEVELS.includes(level)?level:"N1+");
+globalThis.nmkGetOniState=()=>({enabled:!!oni.enabled,level:oni.level});
 
 const v101OldRenderOniCard=renderOniCard;
 renderOniCard=function(){
