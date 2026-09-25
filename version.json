@@ -1,5 +1,5 @@
 {
-  "version": "10.7.0",
+  "version": "10.8.0",
   "channel": "stable",
   "entry": "index.html",
   "updated": "2026-09-25",
@@ -34,6 +34,12 @@
     "offline-app-shell",
     "pwa-install-button",
     "fresh-launch-normal-mode",
-    "pwa-auto-update-check"
+    "pwa-auto-update-check",
+    "jlpt-first-dashboard",
+    "target-jlpt-selector",
+    "simplified-primary-navigation",
+    "study-session-reset",
+    "quiz-session-reset",
+    "exam-focused-learning-ui"
   ]
 }
