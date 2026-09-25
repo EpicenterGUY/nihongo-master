@@ -19,8 +19,10 @@ function parseBank(raw,n){
 }
 const V=parseBank(globalThis.NMK_V10_VOCAB_RAW,4);
 const G=parseBank(globalThis.NMK_V10_GRAMMAR_RAW,6);
-let oni=(()=>{try{return JSON.parse(localStorage.getItem("nmk_oni_mode")||"null")||{enabled:false,level:"N1+"}}catch(e){return {enabled:false,level:"N1+"}}})();
-if(!ONI_LEVELS.includes(oni.level))oni.level="N1+";
+const savedOni=(()=>{try{return JSON.parse(localStorage.getItem("nmk_oni_mode")||"null")||{level:"N1+"}}catch(e){return {level:"N1+"}}})();
+const oneShotOni=(()=>{try{return sessionStorage.getItem("nmk_oni_once")||""}catch(e){return ""}})();
+let oni={enabled:ONI_LEVELS.includes(oneShotOni),level:ONI_LEVELS.includes(oneShotOni)?oneShotOni:(ONI_LEVELS.includes(savedOni.level)?savedOni.level:"N1+")};
+try{sessionStorage.removeItem("nmk_oni_once")}catch(e){}
 
 document.title="日本語 MASTER v10";
 const badge=document.querySelector(".brand .badge"); if(badge)badge.textContent="v10";
@@ -164,8 +166,8 @@ function renderOniCard(){
  if(box)box.innerHTML=`<div><span class="muted small">어휘</span><b>${c.vocab}</b></div><div><span class="muted small">문법</span><b>${c.grammar}</b></div><div><span class="muted small">성격</span><b style="font-size:14px">${m.label}</b></div><div style="grid-column:1/-1"><span class="muted small">난도 기준</span><div style="margin-top:4px;line-height:1.55">${m.desc}</div></div>`;
  document.getElementById("oniExitBtn").style.display=oni.enabled?"inline-block":"none";
 }
-function enterOni(level){oni={enabled:true,level};localStorage.setItem("nmk_oni_mode",JSON.stringify(oni));applyMode();navTo("home");toast(`👹 ${level} 오니 모드`)}
-function exitOni(){oni.enabled=false;localStorage.setItem("nmk_oni_mode",JSON.stringify(oni));applyMode();navTo("home");toast("일반 모드로 돌아왔어")}
+function enterOni(level){oni={enabled:true,level};localStorage.setItem("nmk_oni_mode",JSON.stringify({enabled:false,level}));applyMode();navTo("home");toast(`👹 ${level} 오니 모드`)}
+function exitOni(){oni.enabled=false;localStorage.setItem("nmk_oni_mode",JSON.stringify({enabled:false,level:oni.level}));applyMode();navTo("home");toast("일반 모드로 돌아왔어")}
 function applyMode(){
  document.body.classList.toggle("oni-mode",oni.enabled);configureSelectors();
  const b=document.getElementById("oniBanner");if(b){b.style.display=oni.enabled?"block":"none";if(oni.enabled)b.innerHTML=`<b>👹 鬼級 · ${oni.level} 전용</b><small>현재 학습·찾기·퀴즈·복습은 ${oni.level}만 취급해. 다른 급수는 숨겨져 있어.</small>`}
@@ -304,6 +306,7 @@ upgradeV101OniCard();
 // Backward-compatible globals rescue stale HTML cached with the older inline onclick names.
 globalThis.enterOniFromSetting=()=>enterOni(document.getElementById("oniLevelSelect")?.value||oni.level||"N1+");
 globalThis.exitOniMode=()=>exitOni();
+globalThis.nmkEnterOni=(level)=>enterOni(ONI_LEVELS.includes(level)?level:"N1+");
 
 const v101OldRenderOniCard=renderOniCard;
 renderOniCard=function(){
@@ -1409,5 +1412,16 @@ body.oni-mode .v106-filter-chip.active{background:#6d243d;border-color:#6d243d}
 document.head.appendChild(v106Style);
 
 if(studyView==="table"){renderTableTools();renderVocabTable()}
+
+
+// ===== v10.7: PWA launch defaults =====
+document.title="日本語 MASTER v10.7";
+function syncV107Badge(){
+ const b=document.querySelector(".brand .badge");
+ if(b&&!oni.enabled)b.textContent="v10.7";
+}
+const v107Apply=applyMode;
+applyMode=function(){v107Apply();syncV107Badge()};
+syncV107Badge();
 
 })();
