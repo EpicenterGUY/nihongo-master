@@ -1,5 +1,5 @@
 {
-  "version": "10.5.0",
+  "version": "10.6.0",
   "channel": "stable",
   "entry": "index.html",
   "updated": "2026-09-25",
@@ -26,6 +26,9 @@
     "v105-vocabulary-expansion",
     "v105-kanji-expansion",
     "v105-grammar-expansion",
-    "classical-grammar-rebalance"
+    "classical-grammar-rebalance",
+    "pos-memorization-table",
+    "pos-count-chips",
+    "oni-field-filter"
   ]
 }
