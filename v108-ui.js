@@ -287,6 +287,10 @@ function simplifyMore(){
  const grid=document.querySelector("#more .more-grid");if(!grid)return;
  const quiz=[...grid.querySelectorAll(".more-card")].find(x=>x.getAttribute("onclick")?.includes("quizpage"));
  if(quiz)quiz.style.display="none";
+ const source=[...grid.querySelectorAll(".more-card")].find(x=>x.getAttribute("onclick")?.includes("openSourceLibraryFromMore"));
+ if(source)source.style.display="none";
+ const reset=[...grid.querySelectorAll(".more-card")].find(x=>x.getAttribute("onclick")?.includes("openResetModal"));
+ if(reset)reset.style.display="none";
  if(!document.getElementById("v108FindCard")){
    const b=document.createElement("button");b.type="button";b.className="more-card";b.id="v108FindCard";
    b.innerHTML="<span>🔎</span><b>학습자료 찾기</b><small>단어·문법·한자 검색</small>";
@@ -356,7 +360,7 @@ if(typeof applyMode==="function"){
 
 const style=document.createElement("style");
 style.textContent=`
-.v108-legacy-hooks{display:none!important}
+.v108-legacy-hooks{display:none!important}\nbody:not(.oni-mode) .top-actions button[title="진도 백업"]{display:none!important}
 .v108-dashboard{max-width:1040px;margin:0 auto;display:grid;gap:13px}
 .v108-target-panel{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:13px 15px}
 .v108-target-panel>div:first-child b{display:block;font-size:16px;margin-top:2px}.v108-label{display:block;color:var(--muted);font-size:11px;font-weight:950;letter-spacing:.02em}
