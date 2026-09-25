@@ -1102,4 +1102,144 @@ const v1041Nav=navTo;
 navTo=function(id){v1041Nav(id);syncV1041OniIsolation()};
 syncV1041OniIsolation();
 
+
+// ===== v10.5: strict post-N1 tier audit + expansion =====
+document.title="日本語 MASTER v10.5";
+
+META["N1+"].desc="N1 범위를 안정적으로 마친 뒤 접하는 현대 학술·법률·행정·비평의 저빈도 실전어와 격식 문형.";
+META["MASTER I"].desc="현대 일본어 안에서도 드문 표외읽기·문예어·수사어·고급 문어를 중심으로 하는 초고급 단계.";
+META["MASTER II"].desc="난해 사자숙어·고사성어·한문투 문형을 중심으로 하는 단계. 일반 현대어보다 한자 문화권 지식 비중이 높다.";
+META["MASTER III"].desc="희귀 문학어·난독 표기와 본격 고전 일본어 문법 체계를 함께 다루는 단계.";
+META["深淵"].desc="한문훈독·고문헌·불교/역사 전문어·극희귀 표기를 격리한 최종 단계. 검증되지 않은 문헌 예문은 만들지 않는다.";
+
+function addV105Extras(){
+ const vv=globalThis.NMK_V105_VOCAB_EXTRA||[];
+ for(const row of vv){
+  const [level,term,reading,meaning,pos]=row;
+  if(DB.vocab.some(x=>x.term===term&&String(x.reading||"")===String(reading||"")))continue;
+  DB.vocab.push({
+   id:`v105_v_${level.replace(/\s/g,"_")}_${DB.vocab.length}`,
+   level,term,reading,meaning,pos,example:"",kr:"",examples:[],
+   nuance:`${META[level]?.label||level} 단계 어휘. 표기·읽기·문체의 실제 난도를 함께 익혀.`,
+   sourceSensitive:["MASTER II","MASTER III","深淵"].includes(level)||/고사성어|사자숙어|불교어|고전어|한문/.test(pos||""),
+   tags:[level,"v10.5확장",pos||"어휘"]
+  });
+ }
+ const kk=globalThis.NMK_V105_KANJI_EXTRA||[];
+ for(const row of kk){
+  const [level,term,reading,meaning,words,note]=row;
+  if(DB.kanji.some(x=>x.term===term&&x.level===level))continue;
+  DB.kanji.push({
+   id:`v105_k_${level.replace(/\s/g,"_")}_${DB.kanji.length}`,
+   level,term,reading,meaning,words,note,
+   tags:[level,"v10.5고급한자"]
+  });
+ }
+ const gg=globalThis.NMK_V105_GRAMMAR_EXTRA||[];
+ for(const row of gg){
+  const [level,term,meaning,form,nuance,example,kr]=row;
+  if(DB.grammar.some(x=>x.term===term&&x.level===level))continue;
+  DB.grammar.push({
+   id:`v105_g_${level.replace(/\s/g,"_")}_${DB.grammar.length}`,
+   level,term,meaning,form,nuance,example:example||"",kr:kr||"",similar:"",
+   sourceSensitive:["MASTER III","深淵"].includes(level),
+   tags:[level,"v10.5문법"]
+  });
+ }
+}
+addV105Extras();
+
+function moveTerms(type,target,terms){
+ const set=new Set(terms);
+ (DB[type]||[]).forEach(x=>{if(set.has(x.term))x.level=target});
+}
+
+// N1+ had accumulated a number of ordinary N1/news words.
+// Keep N1+ focused on genuinely post-N1 formal/academic density.
+moveTerms("vocab","N1",[
+ "暫定","変遷","推移","波及","波紋","捏造","隠蔽","発覚","勧告","撤回","譲歩","収拾","調停","仲裁","遵守","侵害","抑止","牽制","濫用","流用","転用","類推","補完","代替","代償","便宜","包括的","抜本的",
+ "還元","算定","試算","推計","散在","内在","外在","風化","定着","浸透","拡散","蓄積","集積","累積","飽和","枯渇","充足","捻出","採算","損益","否認","黙認","容認","猶予","棚上げ","凍結","撤廃","却下","受理","立証","実証","検証","所見","知見","概観","管轄","委任","裁量","妥当性","正当性","合理性","匿名性","透明性","可視化","一般化","抽象化"
+]);
+
+// MASTER I should not be a bucket for merely common N1 words.
+moveTerms("vocab","N1",[
+ "簡明","緻密","粗忽","迂闊","周到","払拭","吐露","破綻","嗜好","執拗","姑息","杜絶","研鑽","鼓舞","奮起","含蓄","典雅","毅然","凛然","厳然","判然","歴然","漠然","愕然","卓抜","闊達","洒脱"
+]);
+moveTerms("vocab","N1+",[
+ "披瀝","開陳","述懐","遡及","俎上","僥倖","偏執","妄執","因循","萎靡","醸成","涵養","砥礪","薫陶","叱咤","発奮","高邁","截然"
+]);
+
+// A few familiar four-character idioms belong below MASTER II.
+moveTerms("vocab","MASTER I",["朝令暮改","栄枯盛衰","栄耀栄華","鶏群一鶴"]);
+moveTerms("vocab","N1+",["杞人憂天"]);
+
+// Common Buddhist vocabulary is not 深淵 merely because it is religious.
+moveTerms("vocab","MASTER I",["涅槃","菩提","娑婆","弥勒","夜叉"]);
+moveTerms("vocab","MASTER II",["唯識","中観","無明","倶舎","阿頼耶識","末那識","羅刹"]);
+
+// Rebalance advanced kanji by character/read difficulty.
+moveTerms("kanji","N1+",["僧","婆","弥","舎","遮"]);
+moveTerms("kanji","MASTER I",["劫","刹"]);
+
+// Many textbook N1 constructions were previously labeled N1+.
+// Move them back so Oni N1+ feels meaningfully beyond JLPT N1.
+moveTerms("grammar","N1",[
+ "～ずにはおかない","～ずにはすまない","～べく","～べくもない","～べからず","～まじき","～ともなく","～ともなしに","～かたわら","～がてら","～かたがた",
+ "～に即して","～に照らして","～に鑑みて","～を踏まえて","～を経て","～を皮切りに","～を契機に","～をもって","～を限りに","～を境に","～を余儀なくされる","～を顧みず","～を押して",
+ "～に足る","～に足りない","～に難くない","～なくして","～なしには","～あっての","～とあって","～とあれば","～としたところで","～ともあろうものが","～ならいざ知らず","～はおろか","～はさておき","～もさることながら","～にもまして","～ならでは","～に至って","～に至るまで","～に至っては","～にして初めて",
+ "～きらいがある","～ないまでも","～までもなく","～に越したことはない","～の至り","～の極み","～極まりない","～をよそに","～に先駆けて","～に先立って","～にほかならない","～てやまない"
+]);
+
+// These are useful modern idioms, but not MASTER-I grammar difficulty.
+moveTerms("grammar","N1",["～がましい","～びる","～じみる","～めく","～げ"]);
+moveTerms("grammar","N1+",["～に拍車をかける","～に水を差す","～を彷彿とさせる","～を髣髴させる"]);
+
+// Full classical auxiliaries belong to MASTER III, not the idiom/kanbun-flavored MASTER II tier.
+moveTerms("grammar","MASTER III",[
+ "～べし","～まじ","～む","～じ","～らむ","～けむ","～けり","～つ","～ぬ","～たり・り","～る・らる","～す・さす・しむ","～まほし","～たし","～ごとし",
+ "～なり（断定）","～たり（断定）","～なり（伝聞・推定）","～めり","～らし"
+]);
+
+// The old 深淵 grammar was mostly standard classical-Japanese morphology.
+// Put that system in MASTER III and reserve 深淵 for Kanbun / document-level structures.
+moveTerms("grammar","MASTER III",[
+ "ク活用","シク活用","ナリ活用","タリ活用","ラ行変格活用","ナ行変格活用","カ行変格活用","サ行変格活用","上一段活用","下一段活用","上二段活用","下二段活用","四段活用",
+ "連体形終止","係り結び「こそ～已然形」","反実仮想「ましかば～まし」","願望「ばや」","願望「てしがな」","願望「にしがな」","禁止「な～そ」","詠嘆「かな」","詠嘆「かも」","終助詞「なむ」願望",
+ "助動詞「じ」","助動詞「まし」","敬語「給ふ」四段","敬語「給ふ」下二段","敬語「侍り」","敬語「候ふ」"
+]);
+
+// Remove exact duplicates after the tier surgery.
+for(const type of ["vocab","grammar","kanji"]){
+ const seen=new Map();
+ DB[type]=DB[type].filter(x=>{
+  const k=`${x.level}|${x.term}|${x.reading||x.form||""}`;
+  if(!seen.has(k)){seen.set(k,x);return true}
+  const keep=seen.get(k);
+  if(!keep.meaning&&x.meaning)keep.meaning=x.meaning;
+  if(!keep.example&&x.example){keep.example=x.example;keep.kr=x.kr||keep.kr}
+  return false;
+ });
+}
+
+// Tight tier counts and selector isolation after reclassification.
+counts=function(level){
+ return {
+  vocab:DB.vocab.filter(x=>x.level===level).length,
+  grammar:DB.grammar.filter(x=>x.level===level).length,
+  kanji:DB.kanji.filter(x=>x.level===level).length
+ };
+};
+getFiltered=function(type,level){
+ const arr=DB[type]||[];
+ if(oni.enabled)return arr.filter(x=>x.level===oni.level);
+ if(level&&level!=="전체")return arr.filter(x=>x.level===level&&NORMAL_LEVELS.includes(x.level));
+ return arr.filter(x=>NORMAL_LEVELS.includes(x.level));
+};
+
+try{configureSelectors()}catch(e){}
+try{renderOniCard()}catch(e){}
+try{renderV103Guide()}catch(e){}
+try{renderLibrary()}catch(e){}
+try{updateUI()}catch(e){}
+
 })();
