@@ -1,5 +1,5 @@
 {
-  "version": "10.4.1",
+  "version": "10.5.0",
   "channel": "stable",
   "entry": "index.html",
   "updated": "2026-09-25",
@@ -21,6 +21,11 @@
     "oni-advanced-grammar",
     "oni-only-master-roadmap",
     "koreanized-external-grammar",
-    "full-hanja-huneum-fallback"
+    "full-hanja-huneum-fallback",
+    "strict-post-n1-tier-audit",
+    "v105-vocabulary-expansion",
+    "v105-kanji-expansion",
+    "v105-grammar-expansion",
+    "classical-grammar-rebalance"
   ]
 }
