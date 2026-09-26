@@ -8,9 +8,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="日本語 MASTER">
-<link rel="manifest" href="./manifest.webmanifest?v=10.9.1">
+<link rel="manifest" href="./manifest.webmanifest?v=10.10.0">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
-<title>日本語 MASTER v10.9.1</title>
+<title>日本語 MASTER v10.10</title>
 <style>
 :root{
  --bg:#fff8ef;--panel:#fff;--text:#202228;--muted:#777b84;--line:#eee3d6;
@@ -687,7 +687,7 @@ function resetProgress(){if(confirm("학습 진도를 초기화할까?")){localS
 
 
 // ---------- Massive JLPT expansion pack ----------
-const EXPANSION_VERSION="2026-09-24-v1";
+const EXPANSION_VERSION="2026-09-26-v2-korean-safe";
 const EXPANSION_URLS=[
   ...["n5","n4","n3","n2","n1"].map(n=>({kind:"vocab",level:n.toUpperCase(),url:`https://raw.githubusercontent.com/evanclan/OpenJLPT/main/data/json/vocab/${n}.json`})),
   ...["n5","n4","n3","n2","n1"].map(n=>({kind:"kanji",level:n.toUpperCase(),url:`https://raw.githubusercontent.com/evanclan/OpenJLPT/main/data/json/kanji/${n}.json`})),
@@ -1455,17 +1455,90 @@ function openTermFromGroup(type,term){
 }
 
 // Keep every example from OpenJLPT and use it to enrich duplicate internal cards.
+const EXT_GRAMMAR_KO_SAFE={
+ "か":{meaning:"의문을 나타내는 종조사",form:"문장 + か",nuance:"문장 끝에 붙여 평서문을 질문으로 바꿔. 정중체에서는 「ですか」「ますか」처럼 쓰며, 일본어에서는 문맥상 분명하면 물음표가 없어도 질문이 성립해."},
+ "が":{meaning:"주어·대상을 나타내는 조사",form:"명사 + が + 서술어",nuance:"새로 제시하는 정보의 주어, 존재하는 대상, 능력·감정의 대상을 표시할 때 자주 써. 「は」가 화제를 잡는다면 「が」는 무엇이 그런지를 짚는 느낌이 강해."},
+ "を":{meaning:"동작의 대상을 나타내는 조사",form:"명사 + を + 타동사",nuance:"먹다·보다·읽다처럼 동작이 직접 향하는 대상을 표시해."},
+ "に":{meaning:"시간·도착점·대상 등을 나타내는 조사",form:"시간/장소/대상 + に",nuance:"특정 시점, 이동의 도착점, 존재 장소, 행동의 상대처럼 여러 역할이 있어. 문맥에 따라 기능을 구분해서 익혀."},
+ "で":{meaning:"행동 장소·수단을 나타내는 조사",form:"장소/수단 + で",nuance:"행동이 일어나는 장소나 도구·교통수단·언어 같은 방법을 나타내."},
+ "と":{meaning:"~와/과; ~라고",form:"명사 + と / 인용 내용 + と",nuance:"함께하는 상대·완전한 나열을 나타내거나, 말·생각의 내용을 인용할 때 써."},
+ "も":{meaning:"~도",form:"명사 + も",nuance:"앞에서 말한 것과 같은 성질·상황이 하나 더 해당함을 나타내."},
+ "の":{meaning:"~의; 명사를 꾸미는 조사",form:"명사 + の + 명사",nuance:"소유·소속·종류처럼 두 명사를 연결해. 문맥에 따라 앞의 명사가 뒤의 명사를 설명하는 관계가 돼."},
+ "は":{meaning:"화제를 나타내는 조사",form:"명사 + は + 서술어",nuance:"문장에서 지금 무엇에 대해 말하는지를 정해. 이미 알려진 대상이나 대비를 나타낼 때도 자주 써."},
+ "へ":{meaning:"~로, ~을 향해",form:"장소 + へ + 이동동사",nuance:"이동의 방향을 강조해. 도착점 자체를 나타내는 「に」와 달리 ‘그쪽을 향함’에 초점이 있어."},
+ "一番":{meaning:"가장 ~; 제일 ~",form:"一番 + い형용사/な형용사 · [범위] + の中で + 一番 + 형용사",nuance:"여러 대상 가운데 정도가 가장 높은 것을 나타내는 최상급 표현이야. 「一番大きい」는 ‘가장 크다’, 「一番好き」는 ‘가장 좋아하다’라는 뜻이야."},
+ "一緒に":{meaning:"함께",form:"사람 + と + 一緒に + 동사",nuance:"누군가와 같은 행동을 함께 한다는 뜻이야. 상대는 보통 「と」로 표시해."},
+ "から":{meaning:"~이기 때문에; ~부터",form:"문장 + から / 시작점 + から",nuance:"문장 뒤에서는 이유를, 시간·장소 뒤에서는 시작점을 나타내."},
+ "まで":{meaning:"~까지",form:"시간/장소 + まで",nuance:"시간·장소·범위의 끝점을 나타내."},
+ "だけ":{meaning:"~만",form:"명사/동사/수량 + だけ",nuance:"범위를 하나로 제한할 때 쓰는 가장 기본적인 한정 표현이야."},
+ "しか〜ない":{meaning:"~밖에 없다",form:"명사 + しか + 부정형",nuance:"선택지나 수량이 매우 제한적이라는 느낌을 강조해. 반드시 뒤에 부정형이 와."},
+ "ている":{meaning:"~하고 있다; ~한 상태이다",form:"동사 て형 + いる",nuance:"진행 중인 행동뿐 아니라 결과 상태·습관도 나타낼 수 있어. 동사에 따라 뜻이 달라지는 점이 중요해."},
+ "てください":{meaning:"~해 주세요",form:"동사 て형 + ください",nuance:"상대에게 정중하게 행동을 부탁하는 기본 표현이야."},
+ "てもいい":{meaning:"~해도 된다",form:"동사 て형 + もいい",nuance:"허가를 구하거나 허락할 때 써."},
+ "てはいけない":{meaning:"~하면 안 된다",form:"동사 て형 + はいけない",nuance:"금지나 규칙을 나타내."},
+ "たい":{meaning:"~하고 싶다",form:"동사 ます형 어간 + たい",nuance:"화자 자신의 희망을 나타내며, 형태는 い형용사처럼 활용해."},
+ "たことがある":{meaning:"~한 적이 있다",form:"동사 た형 + ことがある",nuance:"과거의 경험 유무를 말할 때 써."},
+ "つもりだ":{meaning:"~할 생각이다",form:"동사 사전형/ない형 + つもりだ",nuance:"이미 어느 정도 정해 둔 개인적인 의도나 계획을 나타내."},
+ "〜たり〜たりする":{meaning:"~하기도 하고 ~하기도 하다",form:"동사 た형 + り + 동사 た형 + りする",nuance:"여러 행동 중 대표적인 예 몇 가지를 골라 나열할 때 써."},
+ "すぎる":{meaning:"너무 ~하다",form:"동사 ます형 어간/형용사 어간 + すぎる",nuance:"정도나 양이 적절한 범위를 넘어섰음을 나타내."},
+ "だ・です":{meaning:"~이다/~입니다",form:"명사·な형용사 + だ/です",nuance:"명사나 な형용사를 문장의 서술어로 만드는 기본적인 단정 표현이야. 「です」가 정중체야."},
+ "じゃない・ではない":{meaning:"~이 아니다",form:"명사·な형용사 + じゃない/ではない",nuance:"명사문과 な형용사문의 보통체 부정형이야. 「ではない」가 더 격식 있어."},
+ "だった・でした":{meaning:"~이었다/~였습니다",form:"명사·な형용사 + だった/でした",nuance:"명사와 な형용사의 과거형이야."},
+ "い形容詞＋名詞":{meaning:"い형용사로 명사를 꾸미기",form:"い형용사 + 명사",nuance:"い형용사는 형태를 바꾸지 않고 바로 명사 앞에 붙여 성질을 설명해. 예: 「高い山」."},
+ "う動詞":{meaning:"5단동사(う동사) 활용",form:"5단동사 · 書く/飲む/話す 등",nuance:"어미가 활용할 때 あ·い·う·え·お단으로 바뀌는 동사 그룹이야. ない형·ます형·て형을 만들 때 어미 변화가 핵심이야."},
+ "る動詞":{meaning:"1단동사(る동사) 활용",form:"1단동사 · 食べる/見る 등",nuance:"기본적으로 끝의 「る」를 떼고 활용 어미를 붙이는 동사 그룹이야. 일부 예외 5단동사는 따로 외워야 해."},
+ "する":{meaning:"하다",form:"する → します/しない/した/して",nuance:"불규칙 동사이며 많은 명사 뒤에 붙어 동사를 만들 수 있어. 예: 「勉強する」."},
+ "くる":{meaning:"오다",form:"くる → きます/こない/きた/きて",nuance:"대표적인 불규칙 동사이므로 각 활용형을 묶어서 외우는 편이 좋아."}
+};
+function localizeExternalGrammarForm(text){
+ let s=String(text||"");
+ const reps=[
+  [/i-adjective/gi,"い형용사"],[/na-adjective/gi,"な형용사"],[/adjective/gi,"형용사"],
+  [/dictionary form/gi,"사전형"],[/plain form/gi,"보통형"],[/polite form/gi,"정중형"],
+  [/negative-past/gi,"과거 부정형"],[/negative form/gi,"부정형"],[/negative/gi,"부정형"],
+  [/past form/gi,"과거형"],[/past/gi,"과거형"],[/stem/gi,"어간"],
+  [/sentence/gi,"문장"],[/noun/gi,"명사"],[/verb/gi,"동사"],[/number/gi,"수"],[/quantity/gi,"수량"],
+  [/counter/gi,"조수사"],[/receiver/gi,"받는 사람"],[/thing/gi,"물건"],[/person/gi,"사람"],[/animal/gi,"동물"],
+  [/place/gi,"장소"],[/group/gi,"범위"],[/native word/gi,"고유어"],[/sino-japanese word/gi,"한자어"],
+  [/subject/gi,"주어"],[/predicate/gi,"서술어"],[/formal/gi,"격식"],[/casual/gi,"회화체"],[/polite/gi,"정중체"]
+ ];
+ for(const [a,b] of reps)s=s.replace(a,b);
+ return s.replace(/\s+/g," ").replace(/\s*\/\s*/g," / ").trim();
+}
+function koreanExternalPos(raw){
+ const s=Array.isArray(raw)?raw.join(", "):String(raw||"");
+ if(!s)return "확장 어휘";
+ if(/noun/i.test(s))return "명사";
+ if(/verb/i.test(s))return "동사";
+ if(/adverb/i.test(s))return "부사";
+ if(/i[- ]?adjective/i.test(s))return "い형용사";
+ if(/na[- ]?adjective|adjectival noun/i.test(s))return "な형용사";
+ if(/adjective/i.test(s))return "형용사";
+ return hasLatin(s)?"확장 어휘":s;
+}
+function safeExternalGrammar(term,meaning,form){
+ const key=String(term||"").trim(),o=EXT_GRAMMAR_KO_SAFE[key]||null;
+ return {
+  meaning:o?.meaning||String(meaning||""),
+  form:o?.form||localizeExternalGrammarForm(form),
+  nuance:o?.nuance||"",
+  curated:!!o
+ };
+}
+
 function normVocab(x,i,level){
  const exs=(x.examples||[]).map(e=>({ja:e.ja||"",en:e.en||""})).filter(e=>e.ja);
- const ex=exs[0]||{};
+ const ex=exs[0]||{},raw=Array.isArray(x.meanings)?x.meanings.join(", "):(x.meaning||x.gloss||"");
  return {id:`ext_v_${level}_${i}_${x.word||x.term||""}`,level:x.level||level,term:x.word||x.term||x.expression||"",reading:x.reading||x.kana||"",
-   meaning:Array.isArray(x.meanings)?x.meanings.join(", "):(x.meaning||x.gloss||""),rawMeaning:Array.isArray(x.meanings)?x.meanings.join(", "):(x.meaning||x.gloss||""),
-   pos:Array.isArray(x.pos)?x.pos.join(", "):(x.pos||"확장 어휘"),example:ex.ja||"",kr:ex.en||"",examples:exs,tags:["확장팩","예상 JLPT"]};
+   meaning:raw,rawMeaning:raw,pos:koreanExternalPos(x.pos),example:ex.ja||"",kr:ex.en||"",examples:exs,tags:["확장팩","예상 JLPT","보충어휘"],jlptSupplement:true};
 }
 function normGrammar(x,i,level){
  const exs=(x.examples||[]).map(e=>({ja:e.ja||"",en:e.en||""})).filter(e=>e.ja);
- const ex=exs[0]||{},structures=Array.isArray(x.structure)?x.structure.join(" / "):(x.structure||""),rel=(x.related||[]).slice(0,5).map(r=>r.slug||r.title||"").filter(Boolean).join(", ");
- return {id:`ext_g_${level}_${i}_${x.slug||x.title||""}`,level:x.jlpt?`N${x.jlpt}`:level,term:x.title||x.term||x.pattern||"",meaning:x.meaning||x.summary||"",rawMeaning:x.meaning||x.summary||"",form:structures,nuance:x.summary||"",example:ex.ja||"",kr:ex.en||"",examples:exs,similar:rel};
+ const ex=exs[0]||{},structures=Array.isArray(x.structure)?x.structure.join(" / "):(x.structure||""),term=x.title||x.term||x.pattern||"";
+ const raw=x.meaning||x.summary||"",safe=safeExternalGrammar(term,raw,structures);
+ const rel=(x.related||[]).slice(0,5).map(r=>r.title||"").filter(v=>v&&!hasLatin(v)).join(", ");
+ return {id:`ext_g_${level}_${i}_${x.slug||term}`,level:x.jlpt?`N${x.jlpt}`:level,term,meaning:safe.meaning,rawMeaning:raw,form:safe.form,nuance:safe.nuance,
+   example:ex.ja||"",kr:ex.en||"",examples:exs,similar:rel,externalGrammar:true,jlptSupplement:!safe.curated,tags:["확장팩","예상 JLPT",safe.curated?"한국어 검수":"보충문법"]};
 }
 function mergeExpansion(pack){
  if(!pack)return;
@@ -2823,9 +2896,9 @@ v9Init();
 <script src="v10-grammar-data.js"></script>
 <script src="v104-extra-data.js?v=10.5.0"></script>
 <script src="v105-extra-data.js?v=10.5.0"></script>
-<script src="v109-jlpt-data.js?v=10.9.1"></script>
-<script src="v10-core.js?v=10.9.1"></script>
-<script src="./pwa.js?v=10.9.1"></script>
-<script src="./v108-ui.js?v=10.9.1"></script>
+<script src="v109-jlpt-data.js?v=10.10.0"></script>
+<script src="v10-core.js?v=10.10.0"></script>
+<script src="./pwa.js?v=10.10.0"></script>
+<script src="./v108-ui.js?v=10.10.0"></script>
 </body>
 </html>
