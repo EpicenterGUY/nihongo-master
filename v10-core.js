@@ -1471,6 +1471,9 @@ function v109Move(type,target,terms){
 v109Move("vocab","N4",["大切"]);
 v109Move("vocab","N2",["対応","制度","積極的","消極的"]);
 v109Move("vocab","N1",["強いる","省みる","膨大"]);
+v109Move("vocab","N5",["宿題"]);
+v109Move("vocab","N3",["説得"]);
+v109Move("vocab","N1",["楕円","優遇","協議","宿敵","前兆","予兆","誘因","起因","火種"]);
 v109Move("vocab","N2",["努める","曖昧","無難"]);
 
 // Grammar audit: several former N5 items are normally learned with the N4 bridge material.
@@ -1514,6 +1517,14 @@ function v109DedupeNormal(){
  DB.kanji=DB.kanji.filter(x=>!NORMAL_LEVELS.includes(x.level)||bestK.get(x.term)===x);
 }
 v109DedupeNormal();
+
+// v109 grammar alias cleanup: keep one learner-facing entry for the same construction.
+DB.grammar=DB.grammar.filter(x=>{
+ if(!NORMAL_LEVELS.includes(x.level))return true;
+ if(x.term==="～ことがある（経験）"&&DB.grammar.some(y=>y.level===x.level&&y.term==="～ことがある"))return false;
+ if(x.term==="～つもりだ"&&DB.grammar.some(y=>y.level===x.level&&y.term==="～つもり"))return false;
+ return true;
+}); // v109 grammar alias cleanup
 
 // Give unseen high-priority JLPT core items precedence without adding another UI switch.
 const v109StartLearnBase=startLearn;
