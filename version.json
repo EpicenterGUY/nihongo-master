@@ -1,5 +1,5 @@
 {
-  "version": "10.9.1",
+  "version": "10.10.0",
   "channel": "stable",
   "entry": "index.html",
   "updated": "2026-09-26",
@@ -45,6 +45,12 @@
     "jlpt-core-vocab-expansion",
     "jlpt-core-grammar-expansion",
     "jlpt-core-kanji-expansion",
-    "jlpt-priority-study-order"
+    "jlpt-priority-study-order",
+    "navigation-stability",
+    "delegated-page-navigation",
+    "korean-only-grammar-explanations",
+    "supplementary-grammar-isolation",
+    "translation-cache-cleanup",
+    "external-pack-korean-sanitizer"
   ]
 }
