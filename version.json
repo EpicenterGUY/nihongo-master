@@ -1,8 +1,8 @@
 {
-  "version": "10.8.1",
+  "version": "10.9.0",
   "channel": "stable",
   "entry": "index.html",
-  "updated": "2026-09-25",
+  "updated": "2026-09-26",
   "features": [
     "advanced-difficulty-audit",
     "oni-mode",
@@ -40,6 +40,11 @@
     "simplified-primary-navigation",
     "study-session-reset",
     "quiz-session-reset",
-    "exam-focused-learning-ui"
+    "exam-focused-learning-ui",
+    "jlpt-level-audit",
+    "jlpt-core-vocab-expansion",
+    "jlpt-core-grammar-expansion",
+    "jlpt-core-kanji-expansion",
+    "jlpt-priority-study-order"
   ]
 }
