@@ -1425,4 +1425,115 @@ const v107Apply=applyMode;
 applyMode=function(){v107Apply();syncV107Badge()};
 syncV107Badge();
 
+
+// ===== v10.9: JLPT N5-N1 audit + core expansion =====
+document.title="日本語 MASTER v10.9";
+
+function addV109JLPTCore(){
+ const vv=globalThis.NMK_V109_JLPT_VOCAB||[];
+ for(const row of vv){
+  const [level,term,reading,meaning,pos]=row;
+  if(DB.vocab.some(x=>NORMAL_LEVELS.includes(x.level)&&x.term===term&&String(x.reading||"")===String(reading||"")))continue;
+  DB.vocab.push({
+   id:`v109_v_${level}_${DB.vocab.length}`,level,term,reading,meaning,pos,
+   example:"",kr:"",examples:[],nuance:`${level} 시험 대비 핵심 어휘. 읽기·문맥·유의어까지 함께 확인해.`,
+   jlptPriority:3,tags:[level,"JLPT","시험대비핵심",pos||"어휘"]
+  });
+ }
+ const gg=globalThis.NMK_V109_JLPT_GRAMMAR||[];
+ for(const row of gg){
+  const [level,term,meaning,form,nuance,example,kr]=row;
+  if(DB.grammar.some(x=>NORMAL_LEVELS.includes(x.level)&&x.term===term))continue;
+  DB.grammar.push({
+   id:`v109_g_${level}_${DB.grammar.length}`,level,term,meaning,form,nuance,
+   example:example||"",kr:kr||"",similar:"",jlptPriority:3,tags:[level,"JLPT","시험대비핵심"]
+  });
+ }
+ const kk=globalThis.NMK_V109_JLPT_KANJI||[];
+ for(const row of kk){
+  const [level,term,reading,meaning,words]=row;
+  if(DB.kanji.some(x=>NORMAL_LEVELS.includes(x.level)&&x.term===term))continue;
+  DB.kanji.push({
+   id:`v109_k_${level}_${DB.kanji.length}`,level,term,reading,meaning,words,
+   note:`${level} 예상 범위 핵심 한자 · 단독 암기보다 주요 熟語 속 읽기를 우선해.`,
+   jlptPriority:3,tags:[level,"JLPT","시험대비핵심"]
+  });
+ }
+}
+addV109JLPTCore();
+
+function v109Move(type,target,terms){
+ const set=new Set(terms);
+ (DB[type]||[]).forEach(x=>{if(NORMAL_LEVELS.includes(x.level)&&set.has(x.term))x.level=target});
+}
+
+// Vocabulary audit: obvious under/over-level placements from the old 60-item seed bank.
+v109Move("vocab","N4",["大切"]);
+v109Move("vocab","N2",["対応","制度","積極的","消極的"]);
+v109Move("vocab","N1",["強いる","省みる","膨大"]);
+v109Move("vocab","N2",["努める","曖昧","無難"]);
+
+// Grammar audit: several former N5 items are normally learned with the N4 bridge material.
+v109Move("grammar","N4",["～ことがある","～つもり","～ながら","～ので","～後で"]);
+v109Move("grammar","N2",["～ことから"]);
+
+// Kanji audit: the previous seed list was built from example words, so basic characters leaked into N2/N1.
+v109Move("kanji","N5",["目","見"]);
+v109Move("kanji","N4",["味","結","変"]);
+v109Move("kanji","N3",["向","課","針","基","準","値","供","負","改","善","省","異","優","欠","念","観","置","余","根","協"]);
+v109Move("kanji","N2",["識","態","趣","恩","恵","模"]);
+
+const v109Rank={N5:0,N4:1,N3:2,N2:3,N1:4};
+function v109DedupeNormal(){
+ // Vocab: identical spelling+reading belongs to its earliest expected study level.
+ const bestV=new Map();
+ for(const x of DB.vocab){
+  if(!NORMAL_LEVELS.includes(x.level))continue;
+  const k=`${x.term}|${x.reading||""}`,old=bestV.get(k);
+  if(!old||v109Rank[x.level]<v109Rank[old.level])bestV.set(k,x);
+ }
+ DB.vocab=DB.vocab.filter(x=>{
+  if(!NORMAL_LEVELS.includes(x.level))return true;
+  return bestV.get(`${x.term}|${x.reading||""}`)===x;
+ });
+ // Grammar: same pattern should not appear in two ordinary JLPT tiers.
+ const bestG=new Map();
+ for(const x of DB.grammar){
+  if(!NORMAL_LEVELS.includes(x.level))continue;
+  const k=x.term,old=bestG.get(k);
+  if(!old||v109Rank[x.level]<v109Rank[old.level])bestG.set(k,x);
+ }
+ DB.grammar=DB.grammar.filter(x=>!NORMAL_LEVELS.includes(x.level)||bestG.get(x.term)===x);
+ // Kanji: one introduction level per character in normal mode.
+ const bestK=new Map();
+ for(const x of DB.kanji){
+  if(!NORMAL_LEVELS.includes(x.level))continue;
+  const old=bestK.get(x.term);
+  if(!old||v109Rank[x.level]<v109Rank[old.level])bestK.set(x.term,x);
+ }
+ DB.kanji=DB.kanji.filter(x=>!NORMAL_LEVELS.includes(x.level)||bestK.get(x.term)===x);
+}
+v109DedupeNormal();
+
+// Give unseen high-priority JLPT core items precedence without adding another UI switch.
+const v109StartLearnBase=startLearn;
+startLearn=function(...args){
+ const r=v109StartLearnBase(...args);
+ try{
+  if(!oni.enabled&&Array.isArray(learnDeck)&&learnDeck.length&&learnIndex===0){
+   learnDeck.sort((a,b)=>{
+    const ca=state.seen[a.id]?.count||0,cb=state.seen[b.id]?.count||0;
+    return ca-cb || (b.jlptPriority||0)-(a.jlptPriority||0);
+   });
+   renderLearnCard();
+  }
+ }catch(e){}
+ return r;
+};
+
+try{configureSelectors()}catch(e){}
+try{renderLibrary()}catch(e){}
+try{renderRoad()}catch(e){}
+try{updateUI()}catch(e){}
+
 })();
