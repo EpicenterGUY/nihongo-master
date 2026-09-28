@@ -1,8 +1,8 @@
 {
-  "version": "10.10.0",
+  "version": "10.11.0",
   "channel": "stable",
   "entry": "index.html",
-  "updated": "2026-09-26",
+  "updated": "2026-09-28",
   "features": [
     "advanced-difficulty-audit",
     "oni-mode",
@@ -51,6 +51,12 @@
     "korean-only-grammar-explanations",
     "supplementary-grammar-isolation",
     "translation-cache-cleanup",
-    "external-pack-korean-sanitizer"
+    "external-pack-korean-sanitizer",
+    "oni-dialect-atlas",
+    "nationwide-dialect-coverage",
+    "korean-dialect-explanations",
+    "dialect-standard-korean-comparison",
+    "ryukyuan-language-notes",
+    "dialect-expression-drill"
   ]
 }
