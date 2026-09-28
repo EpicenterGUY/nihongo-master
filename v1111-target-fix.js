@@ -2,6 +2,7 @@
 (()=>{
 "use strict";
 const LEVELS=new Set(["N5","N4","N3","N2","N1"]);
+const ONI_LEVELS=new Set(["N1+","MASTER I","MASTER II","MASTER III","深淵"]);
 
 function selectedInDOM(level){
  const b=document.querySelector(`[data-jlpt-target="${level}"]`);
@@ -50,9 +51,31 @@ function choose(level){
 }
 globalThis.chooseJLPTTarget=choose;
 
+function chooseOni(level){
+ if(!ONI_LEVELS.has(level))return;
+ let ok=false;
+ try{
+  if(typeof globalThis.setOniTarget==="function"){globalThis.setOniTarget(level);ok=true}
+  else if(typeof globalThis.nmkEnterOni==="function"){globalThis.nmkEnterOni(level);ok=true}
+ }catch(err){console.error("Oni target switch recovered",err)}
+ document.querySelectorAll("[data-oni-target]").forEach(b=>{
+  const on=b.dataset.oniTarget===level;
+  b.classList.toggle("active",on);
+  b.setAttribute("aria-pressed",on?"true":"false");
+ });
+ if(ok)setTimeout(()=>window.dispatchEvent(new CustomEvent("nmk:modechange",{detail:{enabled:true,level}})),0);
+ return ok;
+}
+globalThis.chooseOniTarget=chooseOni;
+
 // Capture phase makes the level selector independent of dynamically rebuilt home HTML
 // and of any stale bubble-phase listeners from older PWA caches.
 document.addEventListener("click",e=>{
+ const ob=e.target.closest?.("[data-oni-target]");
+ if(ob){
+  const level=ob.dataset.oniTarget;
+  if(ONI_LEVELS.has(level)){e.preventDefault();e.stopImmediatePropagation();chooseOni(level);return}
+ }
  const b=e.target.closest?.("[data-jlpt-target]");
  if(!b)return;
  const level=b.dataset.jlptTarget;
@@ -73,7 +96,7 @@ document.addEventListener("keydown",e=>{
 
 const style=document.createElement("style");
 style.textContent=`
-.v108-targets,.v108-target{pointer-events:auto!important}
+.v108-targets,.v108-target,.v112-oni-targets,.v112-oni-target{pointer-events:auto!important}
 .v108-target{position:relative;z-index:2;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .v108-target:active{transform:scale(.97)}
 `;
