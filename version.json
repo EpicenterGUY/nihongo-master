@@ -1,5 +1,5 @@
 {
-  "version": "10.14.0",
+  "version": "10.14.1",
   "channel": "stable",
   "entry": "index.html",
   "updated": "2026-09-28",
@@ -78,6 +78,7 @@
     "single-mode-change-dispatch",
     "keyboard-target-dedup",
     "runtime-title-sync",
-    "pwa-cache-refresh"
+    "pwa-cache-refresh",
+    "latest-router-delegation"
   ]
 }
