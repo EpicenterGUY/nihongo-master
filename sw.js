@@ -11,7 +11,6 @@ const SHELL=[
  "./v104-extra-data.js",
  "./v105-extra-data.js",
  "./v109-jlpt-data.js",
- "./v105-extra-data.js",
  "./v10-core.js",
  "./pwa.js",
  "./v108-ui.js",
