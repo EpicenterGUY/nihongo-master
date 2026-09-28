@@ -1,4 +1,4 @@
-// 日本語 MASTER PWA helper v10.13.0
+// 日本語 MASTER PWA helper v10.15.0
 (()=>{
 "use strict";
 let deferredInstall=null;
@@ -51,9 +51,18 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 
 if("serviceWorker" in navigator){
+ const hadController=!!navigator.serviceWorker.controller;
+ let reloadingForUpdate=false;
+ if(hadController){
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{
+   if(reloadingForUpdate)return;
+   reloadingForUpdate=true;
+   location.reload();
+  });
+ }
  window.addEventListener("load",async()=>{
   try{
-   const reg=await navigator.serviceWorker.register("./sw.js?v=10.14.1",{scope:"./"});
+   const reg=await navigator.serviceWorker.register("./sw.js?v=10.15.0",{scope:"./"});
    await reg.update().catch(()=>{});
    const check=()=>reg.update().catch(()=>{});
    document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")check()});
