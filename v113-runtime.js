@@ -1,7 +1,7 @@
-// 日本語 MASTER v10.14 — runtime consolidation and bug sweep
+// 日本語 MASTER v10.14.1 — runtime consolidation and bug sweep
 (()=>{
 "use strict";
-document.title="日本語 MASTER v10.14";
+document.title="日本語 MASTER v10.14.1";
 const NORMAL=new Set(["N5","N4","N3","N2","N1"]);
 const CORE_TYPES=new Set(["vocab","grammar","kanji"]);
 
@@ -122,7 +122,7 @@ function syncModeClass(){
  }
  const badge=document.querySelector(".brand .badge");
  if(badge){
-  const label=o.enabled?"鬼 "+o.level:"v10.14";
+  const label=o.enabled?"鬼 "+o.level:"v10.14.1";
   if(badge.textContent!==label)badge.textContent=label;
  }
 }
