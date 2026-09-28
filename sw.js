@@ -1,5 +1,5 @@
-// 日本語 MASTER service worker v10.10.0
-const CACHE="nihongo-master-v10.10.0";
+// 日本語 MASTER service worker v10.11.0
+const CACHE="nihongo-master-v10.11.0";
 const SHELL=[
  "./",
  "./index.html",
@@ -16,6 +16,8 @@ const SHELL=[
  "./pwa.js",
  "./v108-ui.js",
  "./v110-stability.js",
+ "./v111-dialect-data.js",
+ "./v111-dialects.js",
  "./version.json"
 ];
 
