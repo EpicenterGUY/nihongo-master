@@ -1,5 +1,5 @@
 {
-  "version": "10.15.0",
+  "version": "10.15.1",
   "channel": "stable",
   "entry": "index.html",
   "updated": "2026-09-28",
@@ -82,6 +82,8 @@
     "latest-router-delegation",
     "safe-progress-state-recovery",
     "storage-failure-resilience",
-    "service-worker-controller-refresh"
+    "service-worker-controller-refresh",
+    "legacy-roadmap-null-guard",
+    "legacy-badge-version-sync"
   ]
 }
