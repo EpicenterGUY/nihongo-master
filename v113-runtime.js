@@ -1,6 +1,7 @@
-// 日本語 MASTER v10.13 — runtime consolidation and bug sweep
+// 日本語 MASTER v10.14 — runtime consolidation and bug sweep
 (()=>{
 "use strict";
+document.title="日本語 MASTER v10.14";
 const NORMAL=new Set(["N5","N4","N3","N2","N1"]);
 const CORE_TYPES=new Set(["vocab","grammar","kanji"]);
 
@@ -99,15 +100,31 @@ function syncModeClass(){
  document.body.classList.toggle("oni-mode",!!o.enabled);
  const banner=document.getElementById("oniBanner");
  if(banner){
-  banner.style.display=o.enabled?"block":"none";
-  if(o.enabled)banner.innerHTML="<b>👹 鬼級 · "+o.level+"</b><small>현재 학습·찾기·문제·복습은 "+o.level+" 단계만 사용해.</small>";
+  const modeKey=o.enabled?"oni:"+o.level:"normal";
+  const display=o.enabled?"block":"none";
+  if(banner.style.display!==display)banner.style.display=display;
+  if(o.enabled&&banner.dataset.modeKey!==modeKey){
+   banner.innerHTML="<b>👹 鬼級 · "+o.level+"</b><small>현재 학습·찾기·문제·복습은 "+o.level+" 단계만 사용해.</small>";
+   banner.dataset.modeKey=modeKey;
+  }else if(!o.enabled){
+   banner.dataset.modeKey=modeKey;
+  }
  }
  const entry=document.getElementById("oniStaticEntry");
- if(entry)entry.style.display=o.enabled?"none":"";
+ if(entry){
+  const display=o.enabled?"none":"";
+  if(entry.style.display!==display)entry.style.display=display;
+ }
  const settings=document.getElementById("oniSettingsCard");
- if(settings)settings.style.display=o.enabled?"block":"none";
+ if(settings){
+  const display=o.enabled?"block":"none";
+  if(settings.style.display!==display)settings.style.display=display;
+ }
  const badge=document.querySelector(".brand .badge");
- if(badge)badge.textContent=o.enabled?"鬼 "+o.level:"v10.13";
+ if(badge){
+  const label=o.enabled?"鬼 "+o.level:"v10.14";
+  if(badge.textContent!==label)badge.textContent=label;
+ }
 }
 globalThis.nmkSyncModeClass=syncModeClass;
 
@@ -173,7 +190,10 @@ function injectOniExit(){
  panel.appendChild(b);
 }
 if(typeof MutationObserver!=="undefined"){
- const observer=new MutationObserver(()=>{syncModeClass();injectOniExit()});
+ // Home is rebuilt when the target changes. Only restore the exit button here.
+ // Calling syncModeClass from this observer used to rewrite oniBanner.innerHTML,
+ // which generated another childList mutation and could loop indefinitely in Oni mode.
+ const observer=new MutationObserver(()=>injectOniExit());
  try{observer.observe(document.getElementById("home")||document.body,{childList:true,subtree:true})}catch(e){}
 }
 setTimeout(()=>{syncModeClass();syncPageState();injectOniExit()},0);
