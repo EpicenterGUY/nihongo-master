@@ -8,9 +8,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="日本語 MASTER">
-<link rel="manifest" href="./manifest.webmanifest?v=10.11.1">
+<link rel="manifest" href="./manifest.webmanifest?v=10.12.0">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
-<title>日本語 MASTER v10.11.1</title>
+<title>日本語 MASTER v10.12</title>
 <style>
 :root{
  --bg:#fff8ef;--panel:#fff;--text:#202228;--muted:#777b84;--line:#eee3d6;
@@ -504,8 +504,8 @@ body.oni-mode .oni-only-master-road{display:block!important}
 
 <div class="oni-static-overlay" id="oniStaticOverlay" onclick="if(event.target===this)closeOniEntryStatic()">
  <div class="oni-static-modal" role="dialog" aria-modal="true" aria-labelledby="oniStaticTitle">
-  <h2 id="oniStaticTitle">👹 오니 모드 입장</h2>
-  <p>N1+ 이후는 일반 커리큘럼과 분리된 초고급 과정이야. 한 단계만 골라 집중해서 공부해.</p>
+  <h2 id="oniStaticTitle">👹 오니 모드</h2>
+  <p>오니 모드에 들어간 뒤 홈에서 N1+·MASTER I·II·III·深淵을 자유롭게 바꿀 수 있어.</p>
   <div class="oni-static-grid" id="oniStaticGrid">
    <button type="button" data-static-oni="N1+"><b>N1+</b><small>N1 다음</small></button>
    <button type="button" data-static-oni="MASTER I"><b>MASTER I</b><small>초고급 I</small></button>
@@ -2867,8 +2867,14 @@ v9Init();
   const info=document.getElementById("oniStaticInfo");if(info)info.textContent=selected+" · "+ONI_INFO[selected];
  }
  window.openOniEntryStatic=function(){
-  const o=document.getElementById("oniStaticOverlay");if(!o)return;
-  paint();o.classList.add("show");document.body.style.overflow="hidden";
+  // v10.12: enter Oni first; choose N1+/MASTER/深淵 inside Oni just like normal JLPT.
+  if(typeof window.nmkEnterOni==="function"){
+   window.nmkEnterOni(selected);
+   setTimeout(()=>window.dispatchEvent(new CustomEvent("nmk:modechange",{detail:{enabled:true,level:selected}})),0);
+   return;
+  }
+  try{sessionStorage.setItem("nmk_oni_once",selected)}catch(e){}
+  location.reload();
  };
  window.closeOniEntryStatic=function(){
   document.getElementById("oniStaticOverlay")?.classList.remove("show");document.body.style.overflow="";
@@ -2896,13 +2902,14 @@ v9Init();
 <script src="v10-grammar-data.js"></script>
 <script src="v104-extra-data.js?v=10.5.0"></script>
 <script src="v105-extra-data.js?v=10.5.0"></script>
-<script src="v109-jlpt-data.js?v=10.11.1"></script>
-<script src="v10-core.js?v=10.11.1"></script>
-<script src="./pwa.js?v=10.11.1"></script>
-<script src="./v108-ui.js?v=10.11.1"></script>
-<script src="./v110-stability.js?v=10.11.1"></script>
-<script src="./v111-dialect-data.js?v=10.11.1"></script>
-<script src="./v111-dialects.js?v=10.11.1"></script>
-<script src="./v1111-target-fix.js?v=10.11.1"></script>
+<script src="v109-jlpt-data.js?v=10.12.0"></script>
+<script src="v10-core.js?v=10.12.0"></script>
+<script src="./pwa.js?v=10.12.0"></script>
+<script src="./v108-ui.js?v=10.12.0"></script>
+<script src="./v110-stability.js?v=10.12.0"></script>
+<script src="./v111-dialect-data.js?v=10.12.0"></script>
+<script src="./v112-dialect-extra.js?v=10.12.0"></script>
+<script src="./v111-dialects.js?v=10.12.0"></script>
+<script src="./v1111-target-fix.js?v=10.12.0"></script>
 </body>
 </html>
