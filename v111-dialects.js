@@ -85,7 +85,7 @@ function filtered(){
   if(familyFilter!=="전체"&&familyOf(x)!==familyFilter)return false;
   if(groupFilter!=="전체"&&x.group!==groupFilter)return false;
   if(!q)return true;
-  const blob=[x.name,x.ko,x.area,x.summary,(x.prefs||[]).join(" "),(x.features||[]).join(" "),(x.examples||[]).flat().join(" ")].join(" ").toLowerCase();
+  const blob=[x.name,x.ko,x.area,x.summary,(x.prefs||[]).join(" "),(x.features||[]).join(" "),(x.rules||[]).flat().join(" "),(x.examples||[]).flat().join(" ")].join(" ").toLowerCase();
   return blob.includes(q);
  });
 }
