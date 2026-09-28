@@ -106,6 +106,8 @@ function syncModeClass(){
  if(entry)entry.style.display=o.enabled?"none":"";
  const settings=document.getElementById("oniSettingsCard");
  if(settings)settings.style.display=o.enabled?"block":"none";
+ const badge=document.querySelector(".brand .badge");
+ if(badge)badge.textContent=o.enabled?"鬼 "+o.level:"v10.13";
 }
 globalThis.nmkSyncModeClass=syncModeClass;
 
