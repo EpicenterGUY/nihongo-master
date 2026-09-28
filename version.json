@@ -1,5 +1,5 @@
 {
-  "version": "10.13.0",
+  "version": "10.14.0",
   "channel": "stable",
   "entry": "index.html",
   "updated": "2026-09-28",
@@ -73,6 +73,11 @@
     "navigation-postcheck",
     "oni-quick-exit",
     "dialect-rule-search",
-    "no-reload-level-fallback"
+    "no-reload-level-fallback",
+    "oni-observer-loop-fix",
+    "single-mode-change-dispatch",
+    "keyboard-target-dedup",
+    "runtime-title-sync",
+    "pwa-cache-refresh"
   ]
 }
