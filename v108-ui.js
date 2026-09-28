@@ -3,6 +3,7 @@
 "use strict";
 
 const JLPT_LEVELS=["N5","N4","N3","N2","N1"];
+const ONI_LEVELS_UI=["N1+","MASTER I","MASTER II","MASTER III","深淵"];
 let jlptTarget=(()=>{
  try{
   const v=localStorage.getItem("nmk_jlpt_target");
@@ -69,6 +70,26 @@ function hiddenLegacyHooks(){
 function targetChips(){
  return JLPT_LEVELS.map(l=>`<button type="button" class="v108-target ${jlptTarget===l?"active":""}" data-jlpt-target="${l}">${l}</button>`).join("");
 }
+function oniTargetChips(){
+ const current=targetLevel();
+ const labels={"N1+":"N1+","MASTER I":"M I","MASTER II":"M II","MASTER III":"M III","深淵":"深淵"};
+ return ONI_LEVELS_UI.map(l=>`<button type="button" class="v108-target v112-oni-target ${current===l?"active":""}" data-oni-target="${l}" title="${l}">${labels[l]}</button>`).join("");
+}
+function setOniTarget(level){
+ if(!ONI_LEVELS_UI.includes(level))return;
+ try{
+  if(typeof globalThis.nmkEnterOni==="function")globalThis.nmkEnterOni(level);
+  else return;
+ }catch(e){console.error("Oni target switch failed",e);return}
+ setTimeout(()=>{
+  renderJLPTDashboard();
+  renderLearnSetup();
+  renderQuizSetup();
+  window.dispatchEvent(new CustomEvent("nmk:modechange",{detail:{enabled:true,level}}));
+ },0);
+}
+globalThis.setOniTarget=setOniTarget;
+
 function progressCard(cat){
  const level=targetLevel(),q=p(level,cat),m=CAT_UI[cat];
  return `<button type="button" class="v108-area-card" data-v108-study="${cat}">
@@ -94,6 +115,10 @@ function renderJLPTDashboard(){
 
  if(oniOn){
    home.innerHTML=`
+    <section class="v108-target-panel v112-oni-target-panel">
+     <div><span class="v108-label">鬼級 단계</span><b>어느 난이도로 공부할까?</b></div>
+     <div class="v108-targets v112-oni-targets">${oniTargetChips()}</div>
+    </section>
     <section class="v108-hero oni">
      <div class="v108-hero-top"><span class="v108-eyebrow">👹 鬼級 전용 학습</span><span class="v108-target-badge">${esc(level)}</span></div>
      <h2>${esc(level)}에서 오늘 할 것만</h2>
@@ -312,6 +337,7 @@ function init108(){
 
 document.addEventListener("click",e=>{
  const t=e.target.closest("[data-jlpt-target]");if(t){setJLPTTarget(t.dataset.jlptTarget);return}
+ const ot=e.target.closest("[data-oni-target]");if(ot){setOniTarget(ot.dataset.oniTarget);return}
  if(e.target.closest("[data-v108-primary]")){startPrimary();return}
  const s=e.target.closest("[data-v108-study]");if(s){startTargetStudy(s.dataset.v108Study,10);return}
  if(e.target.closest("[data-v108-test]")){startTargetQuiz();return}
@@ -358,13 +384,21 @@ if(typeof applyMode==="function"){
  applyMode=function(){const r=baseApply108();setTimeout(syncTargetToPages,0);return r};
 }
 
+window.addEventListener("nmk:modechange",()=>{
+ setTimeout(()=>{
+  renderJLPTDashboard();
+  renderLearnSetup();
+  renderQuizSetup();
+ },0);
+});
+
 const style=document.createElement("style");
 style.textContent=`
 .v108-legacy-hooks{display:none!important}\nbody:not(.oni-mode) .top-actions button[title="진도 백업"]{display:none!important}
 .v108-dashboard{max-width:1040px;margin:0 auto;display:grid;gap:13px}
 .v108-target-panel{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:13px 15px}
 .v108-target-panel>div:first-child b{display:block;font-size:16px;margin-top:2px}.v108-label{display:block;color:var(--muted);font-size:11px;font-weight:950;letter-spacing:.02em}
-.v108-targets{display:flex;gap:6px}.v108-target{border:1px solid var(--line);background:#fff;border-radius:11px;padding:8px 11px;font-weight:950}.v108-target.active{background:#202228;color:#fff;border-color:#202228}
+.v108-targets{display:flex;gap:6px}.v108-target{border:1px solid var(--line);background:#fff;border-radius:11px;padding:8px 11px;font-weight:950}.v108-target.active{background:#202228;color:#fff;border-color:#202228}.v112-oni-target-panel{border-color:#e4c9d3;background:linear-gradient(145deg,#fff7fa,#fff)}.v112-oni-target.active{background:#68233c;color:#fff;border-color:#68233c}.v112-oni-targets{min-width:0}
 .v108-hero{border:1px solid #eadfd4;border-radius:24px;background:linear-gradient(145deg,#fff9f1,#fff 58%,#f4f2ff);padding:23px;box-shadow:var(--shadow)}
 .v108-hero.oni{background:linear-gradient(145deg,#fff7f9,#fff 55%,#f0e9f7);border-color:#e5ccd5}
 .v108-hero-top{display:flex;align-items:center;justify-content:space-between;gap:10px}.v108-eyebrow,.v108-target-badge{font-size:12px;font-weight:950}.v108-eyebrow{color:var(--accent)}.v108-target-badge{border-radius:999px;background:#542034;color:#fff;padding:6px 9px}.v108-overall{font-size:12px;font-weight:900;color:var(--muted)}
