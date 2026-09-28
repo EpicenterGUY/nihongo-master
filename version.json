@@ -1,5 +1,5 @@
 {
-  "version": "10.12.0",
+  "version": "10.13.0",
   "channel": "stable",
   "entry": "index.html",
   "updated": "2026-09-28",
@@ -65,6 +65,14 @@
     "direct-oni-entry",
     "dialect-rule-guide",
     "dialect-expression-expansion",
-    "robust-target-buttons"
+    "robust-target-buttons",
+    "runtime-consolidation",
+    "oni-startup-race-fix",
+    "core-course-supplement-isolation",
+    "reclassified-metadata-cleanup",
+    "navigation-postcheck",
+    "oni-quick-exit",
+    "dialect-rule-search",
+    "no-reload-level-fallback"
   ]
 }
