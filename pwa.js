@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 if("serviceWorker" in navigator){
  window.addEventListener("load",async()=>{
   try{
-   const reg=await navigator.serviceWorker.register("./sw.js?v=10.14.0",{scope:"./"});
+   const reg=await navigator.serviceWorker.register("./sw.js?v=10.14.1",{scope:"./"});
    await reg.update().catch(()=>{});
    const check=()=>reg.update().catch(()=>{});
    document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")check()});
