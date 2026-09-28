@@ -166,8 +166,12 @@ function renderOniCard(){
  if(box)box.innerHTML=`<div><span class="muted small">어휘</span><b>${c.vocab}</b></div><div><span class="muted small">문법</span><b>${c.grammar}</b></div><div><span class="muted small">성격</span><b style="font-size:14px">${m.label}</b></div><div style="grid-column:1/-1"><span class="muted small">난도 기준</span><div style="margin-top:4px;line-height:1.55">${m.desc}</div></div>`;
  document.getElementById("oniExitBtn").style.display=oni.enabled?"inline-block":"none";
 }
-function enterOni(level){oni={enabled:true,level};localStorage.setItem("nmk_oni_mode",JSON.stringify({enabled:false,level}));applyMode();navTo("home");toast(`👹 ${level} 오니 모드`)}
-function exitOni(){oni.enabled=false;localStorage.setItem("nmk_oni_mode",JSON.stringify({enabled:false,level:oni.level}));applyMode();navTo("home");toast("일반 모드로 돌아왔어")}
+function persistOniLevel(level){
+ try{localStorage.setItem("nmk_oni_mode",JSON.stringify({enabled:false,level}))}
+ catch(e){console.warn("Oni preference save failed",e)}
+}
+function enterOni(level){oni={enabled:true,level};persistOniLevel(level);applyMode();navTo("home");toast(`👹 ${level} 오니 모드`)}
+function exitOni(){oni.enabled=false;persistOniLevel(oni.level);applyMode();navTo("home");toast("일반 모드로 돌아왔어")}
 function applyMode(){
  document.body.classList.toggle("oni-mode",oni.enabled);configureSelectors();
  const b=document.getElementById("oniBanner");if(b){b.style.display=oni.enabled?"block":"none";if(oni.enabled)b.innerHTML=`<b>👹 鬼級 · ${oni.level} 전용</b><small>현재 학습·찾기·퀴즈·복습은 ${oni.level}만 취급해. 다른 급수는 숨겨져 있어.</small>`}
