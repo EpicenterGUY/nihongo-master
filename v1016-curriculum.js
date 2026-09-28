@@ -193,10 +193,11 @@ document.addEventListener("click",e=>{
 });
 window.addEventListener("nmk:modechange",()=>setTimeout(sync,40));
 window.addEventListener("pageshow",()=>setTimeout(sync,60));
-const mo=new MutationObserver(()=>{
+const mo=new MutationObserver(records=>{
   if(!document.getElementById("v1016OniCurriculum")||!document.getElementById("v1016OniRoad"))ensureHosts();
+  if(records.some(r=>r.type==="attributes"&&r.target===document.body&&r.attributeName==="class"))setTimeout(sync,0);
 });
-mo.observe(document.body,{childList:true,subtree:true});
+mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class"]});
 
 const style=document.createElement("style");
 style.id="v1016Style";
