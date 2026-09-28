@@ -182,7 +182,7 @@ document.addEventListener("click",e=>{
  const id=b.dataset.page;if(!id)return;
  e.preventDefault();
  e.stopImmediatePropagation();
- navTo(id);
+ globalThis.navTo?.(id);
 },true);
 
 // Buttons created by the v10.8 dashboard get a post-click navigation verification.
@@ -190,12 +190,12 @@ document.addEventListener("click",e=>{
  const b=e.target.closest?.("[data-v108-nav]");
  if(!b)return;
  const id=b.dataset.v108Nav;
- setTimeout(()=>{if(id&&document.getElementById(id)&&!document.getElementById(id).classList.contains("active"))navTo(id)},0);
+ setTimeout(()=>{if(id&&document.getElementById(id)&&!document.getElementById(id).classList.contains("active"))globalThis.navTo?.(id)},0);
 });
 
 // Top more button also gets a non-inline fallback.
 document.addEventListener("click",e=>{
- if(e.target.closest?.('.top-actions button[title="더보기"]'))setTimeout(()=>{if(!document.getElementById("more")?.classList.contains("active"))navTo("more")},0);
+ if(e.target.closest?.('.top-actions button[title="더보기"]'))setTimeout(()=>{if(!document.getElementById("more")?.classList.contains("active"))globalThis.navTo?.("more")},0);
 });
 
 const style=document.createElement("style");
