@@ -1,4 +1,4 @@
-// 日本語 MASTER v10.11.1 — JLPT target button hardening
+// 日本語 MASTER v10.14 — JLPT/Oni target button hardening
 (()=>{
 "use strict";
 const LEVELS=new Set(["N5","N4","N3","N2","N1"]);
@@ -59,17 +59,22 @@ globalThis.chooseJLPTTarget=choose;
 
 function chooseOni(level){
  if(!ONI_LEVELS.has(level))return;
- let ok=false;
+ let ok=false,needsModeEvent=false;
  try{
-  if(typeof globalThis.setOniTarget==="function"){globalThis.setOniTarget(level);ok=true}
-  else if(typeof globalThis.nmkEnterOni==="function"){globalThis.nmkEnterOni(level);ok=true}
+  if(typeof globalThis.setOniTarget==="function"){
+   // setOniTarget already renders the Oni dashboard and dispatches nmk:modechange.
+   globalThis.setOniTarget(level);ok=true;
+  }else if(typeof globalThis.nmkEnterOni==="function"){
+   // Fallback path has no UI wrapper, so emit exactly one mode-change event here.
+   globalThis.nmkEnterOni(level);ok=true;needsModeEvent=true;
+  }
  }catch(err){console.error("Oni target switch recovered",err)}
  document.querySelectorAll("[data-oni-target]").forEach(b=>{
   const on=b.dataset.oniTarget===level;
   b.classList.toggle("active",on);
   b.setAttribute("aria-pressed",on?"true":"false");
  });
- if(ok)setTimeout(()=>window.dispatchEvent(new CustomEvent("nmk:modechange",{detail:{enabled:true,level}})),0);
+ if(ok&&needsModeEvent)setTimeout(()=>window.dispatchEvent(new CustomEvent("nmk:modechange",{detail:{enabled:true,level}})),0);
  return ok;
 }
 globalThis.chooseOniTarget=chooseOni;
@@ -94,6 +99,9 @@ document.addEventListener("click",e=>{
 // Keyboard accessibility.
 document.addEventListener("keydown",e=>{
  if(e.key!=="Enter"&&e.key!==" ")return;
+ // Native buttons already synthesize one click for Enter/Space. Handling both
+ // keydown and click made a single keyboard action switch the level twice.
+ if(e.target.closest?.("button"))return;
  const ob=e.target.closest?.("[data-oni-target]");
  if(ob){e.preventDefault();chooseOni(ob.dataset.oniTarget);return}
  const b=e.target.closest?.("[data-jlpt-target]");
