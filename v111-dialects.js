@@ -3,6 +3,7 @@
 "use strict";
 const GROUPS=globalThis.NMK_V111_DIALECT_GROUPS||[];
 const DIALECTS=globalThis.NMK_V111_DIALECTS||[];
+const FAMILY_RULES=globalThis.NMK_V112_DIALECT_FAMILY_RULES||[];
 let familyFilter="전체",groupFilter="전체",query="",selectedId=DIALECTS[0]?.id||"";
 let drill=[],drillIndex=0,drillAnswer=false;
 
@@ -28,6 +29,7 @@ function ensurePage(){
    <span>방언 경계는 현 경계처럼 딱 끊기지 않고 서서히 변해. 같은 지역도 세대·마을·상황에 따라 다르므로, 카드의 표현은 ‘대표 예’로 봐야 해.</span>
   </div>
   <div class="v111-stats" id="v111Stats"></div>
+  <div class="v112-familyrules card" id="v112FamilyRules"></div>
   <div class="v111-tools card">
    <div class="v111-family" id="v111Family"></div>
    <div class="v111-searchrow"><input id="v111Search" type="search" placeholder="지역·현·표현 검색 (예: 오사카, 沖縄, だっぺ)"><button class="primary" id="v111Drill" type="button">🎴 표현 10개</button></div>
@@ -56,6 +58,15 @@ function renderStats(){
   <div><small>지역 카드</small><b>${DIALECTS.length}</b><span>전국 세부 지역</span></div>
   <div><small>도도부현</small><b>${pref.size}/47</b><span>전국 커버</span></div>
   <div><small>비교 표현</small><b>${expressions}</b><span>방언→공통어→한국어</span></div>`;
+}
+function renderFamilyRules(){
+ const el=document.getElementById("v112FamilyRules");if(!el)return;
+ const fam=familyFilter==="전체"?null:familyFilter;
+ const rows=fam?FAMILY_RULES.filter(x=>x.family===fam):FAMILY_RULES;
+ if(!rows.length){el.style.display="none";return}
+ el.style.display="block";
+ el.innerHTML=`<div class="v112-rules-head"><div><span>방언 규칙</span><b>${fam?fam+" 방언의 대표 변화":"전국에서 자주 보이는 변화 패턴"}</b></div><small>절대 규칙이 아니라 지역·세대별 대표 경향</small></div>
+  <div class="v112-family-grid">${rows.map(row=>`<section><h4>${esc(row.title)}</h4>${row.rules.map(r=>`<div class="v112-rule"><span class="jp">${esc(r[0])}</span><strong>→ ${esc(r[1])}</strong><small>${esc(r[2])}</small></div>`).join("")}</section>`).join("")}</div>`;
 }
 function renderFamilies(){
  const el=document.getElementById("v111Family");if(!el)return;
@@ -95,18 +106,20 @@ function renderDetail(){
  const x=DIALECTS.find(v=>v.id===selectedId);if(!x){el.innerHTML="";return}
  const g=groupOf(x.group);
  const examples=(x.examples||[]).length?x.examples.map(e=>`<div class="v111-example"><strong class="jp">${esc(e[0])}</strong><span><b>공통어</b> <span class="jp">${esc(e[1])}</span></span><span><b>한국어</b> ${esc(e[2])}</span></div>`).join(""):'<div class="v111-noexample">이 지역은 내부 차이가 커서 대표 문장을 억지로 하나로 고정하지 않았어. 특징 설명을 중심으로 봐.</div>';
+ const rules=(x.rules||[]).length?`<div class="v112-localrules"><div class="v111-examplehead"><b>대표 변화 규칙</b><small>기계적으로 모든 문장에 적용하면 안 됨</small></div>${x.rules.map(r=>`<div class="v112-localrule"><div><span class="jp">${esc(r[0])}</span><strong>→ ${esc(r[1])}</strong></div><p>${esc(r[2])}</p></div>`).join("")}</div>`:'<div class="v112-localrules empty"><b>규칙 메모</b><p>이 지역은 단순 어미 치환보다 억양·음운·고유 어휘 차이가 커서 안전하게 일반화할 규칙을 따로 두지 않았어.</p></div>';
  el.innerHTML=`
   <div class="v111-detailtop"><div><span class="v111-familytag">${esc(g?.family||"")} · ${esc(g?.ko||"")}</span><h2>${esc(x.ko)}</h2><div class="jp v111-jpname">${esc(x.name)}</div></div><div class="v111-pref">${esc(prefsText(x))}</div></div>
   <p class="v111-area">📍 ${esc(x.area)}</p>
   <p class="v111-summary">${esc(x.summary)}</p>
   <div class="v111-featurebox"><b>핵심 특징</b><ul>${(x.features||[]).map(v=>`<li>${esc(v)}</li>`).join("")}</ul></div>
+  ${rules}
   <div class="v111-examplehead"><b>대표 표현 비교</b><small>지역·세대에 따라 달라질 수 있음</small></div>
   <div class="v111-examples">${examples}</div>
   ${x.note?`<div class="v111-note"><b>주의</b> ${esc(x.note)}</div>`:""}
   <button class="secondary v111-up" type="button" data-v111-up>↑ 목록으로</button>`;
 }
 function renderAll(){
- ensurePage();renderStats();renderFamilies();renderGroups();renderList();
+ ensurePage();renderStats();renderFamilyRules();renderFamilies();renderGroups();renderList();
 }
 
 function startDrill(){
@@ -163,7 +176,7 @@ function openDialectAtlas(){
 globalThis.openDialectAtlas=openDialectAtlas;
 
 document.addEventListener("click",e=>{
- const f=e.target.closest?.("[data-v111-family]");if(f){familyFilter=f.dataset.v111Family;groupFilter="전체";renderFamilies();renderGroups();renderList();return}
+ const f=e.target.closest?.("[data-v111-family]");if(f){familyFilter=f.dataset.v111Family;groupFilter="전체";renderFamilyRules();renderFamilies();renderGroups();renderList();return}
  const g=e.target.closest?.("[data-v111-group]");if(g){groupFilter=g.dataset.v111Group;renderGroups();renderList();return}
  const r=e.target.closest?.("[data-v111-id]");if(r){selectedId=r.dataset.v111Id;renderList();if(matchMedia("(max-width:900px)").matches)document.getElementById("v111Detail")?.scrollIntoView({behavior:"smooth",block:"start"});return}
  if(e.target.closest?.("[data-v111-up]")){document.getElementById("v111List")?.scrollIntoView({behavior:"smooth",block:"start"});return}
@@ -187,6 +200,8 @@ style.textContent=`
 #dialects{max-width:1180px;margin:0 auto}.v111-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}.v111-head h2{font-size:30px;margin:4px 0 5px}.v111-head p{margin:0;color:var(--muted);line-height:1.55}.v111-kicker{font-size:12px;font-weight:950;color:#8b3453}
 .v111-notice{background:#fff6e9;border:1px solid #eedcc7;border-radius:16px;padding:12px 14px;display:flex;gap:10px;line-height:1.5;margin-bottom:10px}.v111-notice b{white-space:nowrap}.v111-notice span{color:#655d56;font-size:12px}
 .v111-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}.v111-stats>div{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px}.v111-stats small,.v111-stats span,.v111-stats b{display:block}.v111-stats small,.v111-stats span{color:var(--muted);font-size:10px}.v111-stats b{font-size:22px;margin:2px 0}
+.v112-familyrules{padding:14px;margin-bottom:10px}.v112-rules-head{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:10px}.v112-rules-head span,.v112-rules-head b{display:block}.v112-rules-head span{font-size:10px;color:#8b3453;font-weight:950}.v112-rules-head b{font-size:17px;margin-top:2px}.v112-rules-head small{color:var(--muted);font-size:10px}.v112-family-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.v112-family-grid section{background:#faf7f4;border-radius:13px;padding:11px}.v112-family-grid h4{margin:0 0 7px}.v112-rule{border-top:1px solid #eadfd7;padding:7px 0}.v112-rule:first-of-type{border-top:0;padding-top:0}.v112-rule>span,.v112-rule>strong,.v112-rule>small{display:block}.v112-rule strong{margin:2px 0;font-size:12px;color:#79304a}.v112-rule small{color:var(--muted);line-height:1.45}
+.v112-localrules{margin-top:13px}.v112-localrule{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:6px;background:#fff}.v112-localrule>div{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.v112-localrule strong{color:#7b2d49}.v112-localrule p{margin:5px 0 0;color:var(--muted);font-size:11px;line-height:1.5}.v112-localrules.empty{background:#faf7f4;border-radius:12px;padding:11px}.v112-localrules.empty p{margin:4px 0 0;color:var(--muted);font-size:11px;line-height:1.5}
 .v111-tools{padding:13px;margin-bottom:10px}.v111-family,.v111-groups{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:3px}.v111-family::-webkit-scrollbar,.v111-groups::-webkit-scrollbar{display:none}.v111-family button,.v111-groups button{flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 11px;font-weight:900;font-size:12px}.v111-family button.active,.v111-groups button.active{background:#65243d;color:#fff;border-color:#65243d}
 .v111-searchrow{display:grid;grid-template-columns:1fr auto;gap:8px;margin:10px 0}.v111-searchrow input{width:100%;border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff}
 .v111-layout{display:grid;grid-template-columns:340px 1fr;gap:10px;align-items:start}.v111-list{padding:8px;max-height:72vh;overflow:auto}.v111-listhead{display:flex;justify-content:space-between;align-items:center;padding:8px}.v111-listhead small{color:var(--muted);font-size:10px}
@@ -195,7 +210,7 @@ style.textContent=`
 .v111-source{margin-top:10px;padding:13px;font-size:11px;line-height:1.6;color:var(--muted)}.v111-source b{color:var(--text)}.v111-source p{margin:4px 0 0}
 .v111-drill{margin:0 0 10px;padding:18px;text-align:center;border:1px solid #e7ccd6}.v111-drilltop{display:flex;justify-content:space-between;color:var(--muted);font-size:11px}.v111-drillphrase{font-size:32px;font-weight:950;margin:26px 0 18px}.v111-drill>p{color:var(--muted)}.v111-answer{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.v111-answer>span{background:#faf7f3;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:4px}.v111-answer b{font-size:10px;color:var(--muted)}.v111-drill.done>div:first-child{font-size:40px}.v111-drill.done h3{margin:5px 0 12px}
 body:not(.oni-mode) #dialects{display:none!important}
-@media(max-width:900px){.v111-layout{grid-template-columns:1fr}.v111-list{max-height:none;overflow:visible}.v111-detail{position:static}.v111-up{display:block}.v111-stats{grid-template-columns:1fr 1fr}.v111-head h2{font-size:25px}}
+@media(max-width:900px){.v112-family-grid{grid-template-columns:1fr}.v111-layout{grid-template-columns:1fr}.v111-list{max-height:none;overflow:visible}.v111-detail{position:static}.v111-up{display:block}.v111-stats{grid-template-columns:1fr 1fr}.v111-head h2{font-size:25px}}
 @media(max-width:520px){.v111-head{align-items:flex-start}.v111-head>button{font-size:11px;padding:9px}.v111-notice{display:block}.v111-notice b{display:block;margin-bottom:4px}.v111-searchrow{grid-template-columns:1fr}.v111-searchrow button{width:100%}.v111-detail{padding:15px}.v111-detailtop{display:block}.v111-pref{text-align:left;margin-top:7px}.v111-answer{grid-template-columns:1fr}}
 `;
 document.head.appendChild(style);
