@@ -8,9 +8,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="日本語 MASTER">
-<link rel="manifest" href="./manifest.webmanifest?v=10.15.0">
+<link rel="manifest" href="./manifest.webmanifest?v=10.15.1">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
-<title>日本語 MASTER v10.15</title>
+<title>日本語 MASTER v10.15.1</title>
 <style>
 :root{
  --bg:#fff8ef;--panel:#fff;--text:#202228;--muted:#777b84;--line:#eee3d6;
@@ -233,7 +233,7 @@ body.oni-mode .oni-only-master-road{display:block!important}
 <body>
 <div class="app">
 <aside class="side">
- <div class="brand"><div class="logo">日</div>日本語 MASTER <span class="badge">v10.15</span></div>
+ <div class="brand"><div class="logo">日</div>日本語 MASTER <span class="badge">v10.15.1</span></div>
  <div class="nav">
   <button class="active" data-page="home">🏠 홈</button>
   <button data-page="learnmode">🧠 배우기</button>
@@ -687,8 +687,10 @@ const road={
 };
 function setRoad(l,b){roadLevel=l;document.querySelectorAll("#roadLevels .level-chip").forEach(x=>x.classList.remove("active"));b.classList.add("active");renderRoad()}
 function renderRoad(){
- document.getElementById("roadContent").innerHTML=(road[roadLevel]||[]).map((x,i)=>`<div class="stage"><div style="display:flex;justify-content:space-between"><h3>${i+1}. ${x}</h3><span class="badge">${roadLevel}</span></div></div>`).join("");
- document.getElementById("levelCounts").innerHTML=["vocab","grammar","kanji"].map(t=>{let n=DB[t].filter(x=>x.level===roadLevel).length;return `<div class="statskill"><div style="display:flex;justify-content:space-between"><b>${names[t]}</b><b>${n}개</b></div><div class="bar"><span style="width:${Math.min(100,n)}%"></span></div></div>`}).join("")
+ const legacyRoad=document.getElementById("roadContent");
+ if(legacyRoad)legacyRoad.innerHTML=(road[roadLevel]||[]).map((x,i)=>`<div class="stage"><div style="display:flex;justify-content:space-between"><h3>${i+1}. ${x}</h3><span class="badge">${roadLevel}</span></div></div>`).join("");
+ const legacyCounts=document.getElementById("levelCounts");
+ if(legacyCounts)legacyCounts.innerHTML=["vocab","grammar","kanji"].map(t=>{let n=DB[t].filter(x=>x.level===roadLevel).length;return `<div class="statskill"><div style="display:flex;justify-content:space-between"><b>${names[t]}</b><b>${n}개</b></div><div class="bar"><span style="width:${Math.min(100,n)}%"></span></div></div>`}).join("")
 }
 function renderStats(){
  let vals=Object.values(state.seen),counts={again:0,hard:0,know:0};vals.forEach(s=>{if(s.rating===1)counts.again++;else if(s.rating===2)counts.hard++;else if(s.rating>=3)counts.know++});
@@ -2922,19 +2924,19 @@ v9Init();
 })();
 </script>
 
-<script src="v10-vocab-data.js?v=10.15.0"></script>
-<script src="v10-grammar-data.js?v=10.15.0"></script>
-<script src="v104-extra-data.js?v=10.15.0"></script>
-<script src="v105-extra-data.js?v=10.15.0"></script>
-<script src="v109-jlpt-data.js?v=10.15.0"></script>
-<script src="v10-core.js?v=10.15.0"></script>
-<script src="./pwa.js?v=10.15.0"></script>
-<script src="./v108-ui.js?v=10.15.0"></script>
-<script src="./v110-stability.js?v=10.15.0"></script>
-<script src="./v111-dialect-data.js?v=10.15.0"></script>
-<script src="./v112-dialect-extra.js?v=10.15.0"></script>
-<script src="./v111-dialects.js?v=10.15.0"></script>
-<script src="./v1111-target-fix.js?v=10.15.0"></script>
-<script src="./v113-runtime.js?v=10.15.0"></script>
+<script src="v10-vocab-data.js?v=10.15.1"></script>
+<script src="v10-grammar-data.js?v=10.15.1"></script>
+<script src="v104-extra-data.js?v=10.15.1"></script>
+<script src="v105-extra-data.js?v=10.15.1"></script>
+<script src="v109-jlpt-data.js?v=10.15.1"></script>
+<script src="v10-core.js?v=10.15.1"></script>
+<script src="./pwa.js?v=10.15.1"></script>
+<script src="./v108-ui.js?v=10.15.1"></script>
+<script src="./v110-stability.js?v=10.15.1"></script>
+<script src="./v111-dialect-data.js?v=10.15.1"></script>
+<script src="./v112-dialect-extra.js?v=10.15.1"></script>
+<script src="./v111-dialects.js?v=10.15.1"></script>
+<script src="./v1111-target-fix.js?v=10.15.1"></script>
+<script src="./v113-runtime.js?v=10.15.1"></script>
 </body>
 </html>
