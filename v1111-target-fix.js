@@ -43,9 +43,15 @@ function choose(level){
  setTimeout(()=>{
   if(!selectedInDOM(level)){
    persist(level);
-   location.reload();
+   syncLegacySelects(level);
+   try{globalThis.setJLPTTarget?.(level)}catch(e){}
+   document.querySelectorAll("[data-jlpt-target]").forEach(b=>{
+    const on=b.dataset.jlptTarget===level;
+    b.classList.toggle("active",on);
+    b.setAttribute("aria-pressed",on?"true":"false");
+   });
   }
- },180);
+ },120);
 
  return ok;
 }
@@ -88,6 +94,8 @@ document.addEventListener("click",e=>{
 // Keyboard accessibility.
 document.addEventListener("keydown",e=>{
  if(e.key!=="Enter"&&e.key!==" ")return;
+ const ob=e.target.closest?.("[data-oni-target]");
+ if(ob){e.preventDefault();chooseOni(ob.dataset.oniTarget);return}
  const b=e.target.closest?.("[data-jlpt-target]");
  if(!b)return;
  e.preventDefault();
