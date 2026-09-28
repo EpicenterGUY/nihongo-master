@@ -25,7 +25,7 @@ let oni={enabled:ONI_LEVELS.includes(oneShotOni),level:ONI_LEVELS.includes(oneSh
 try{sessionStorage.removeItem("nmk_oni_once")}catch(e){}
 
 document.title="日本語 MASTER v10";
-const badge=document.querySelector(".brand .badge"); if(badge)badge.textContent="v10";
+const badge=document.querySelector(".brand .badge"); if(badge)badge.textContent="v10.15.1";
 
 // Scroll audit / safe-area fixes
 const style=document.createElement("style");
@@ -175,7 +175,7 @@ function exitOni(){oni.enabled=false;persistOniLevel(oni.level);applyMode();navT
 function applyMode(){
  document.body.classList.toggle("oni-mode",oni.enabled);configureSelectors();
  const b=document.getElementById("oniBanner");if(b){b.style.display=oni.enabled?"block":"none";if(oni.enabled)b.innerHTML=`<b>👹 鬼級 · ${oni.level} 전용</b><small>현재 학습·찾기·퀴즈·복습은 ${oni.level}만 취급해. 다른 급수는 숨겨져 있어.</small>`}
- const bd=document.querySelector(".brand .badge");if(bd)bd.textContent=oni.enabled?`鬼 ${oni.level}`:"v10";
+ const bd=document.querySelector(".brand .badge");if(bd)bd.textContent=oni.enabled?`鬼 ${oni.level}`:"v10.15.1";
  renderOniCard();try{renderRecommendation()}catch(e){}try{renderLibrary()}catch(e){}try{renderRoad()}catch(e){}try{updateUI()}catch(e){}
 }
 
@@ -235,7 +235,7 @@ renderOniCard();
 
 // ===== v10.1: Oni UI overhaul + reliable controls =====
 document.title="日本語 MASTER v10.1";
-const v101Badge=document.querySelector(".brand .badge");if(v101Badge&&!oni.enabled)v101Badge.textContent="v10.1";
+const v101Badge=document.querySelector(".brand .badge");if(v101Badge&&!oni.enabled)v101Badge.textContent="v10.15.1";
 
 const v101Style=document.createElement("style");
 v101Style.textContent=`
@@ -369,7 +369,7 @@ document.addEventListener("click",e=>{
 
 function syncV101OniUI(){
  ensureV101OniSurfaces();bindV101SideNav();
- const versionBadge=document.querySelector(".brand .badge");if(versionBadge)versionBadge.textContent=oni.enabled?`鬼 ${oni.level}`:"v10.1";
+ const versionBadge=document.querySelector(".brand .badge");if(versionBadge)versionBadge.textContent=oni.enabled?`鬼 ${oni.level}`:"v10.15.1";
  const learnLock=document.getElementById("oniLearnLock"),quizLock=document.getElementById("oniQuizLock");if(learnLock)learnLock.textContent=`👹 ${oni.level}`;if(quizLock)quizLock.textContent=`👹 ${oni.level}`;
  const chip=document.querySelector("#home .reco-chip");if(chip)chip.textContent=oni.enabled?"鬼級 전용 코스":"오늘의 일본어";
  const heroStart=document.querySelector("#home .hero-start");if(heroStart)heroStart.textContent=oni.enabled?"오니 학습 시작":"오늘 공부 시작";
@@ -541,7 +541,7 @@ function syncV102Gateway(){
  ensureV102OniGateway();
  const card=document.getElementById("oniSettingsCard");if(card)card.style.display=oni.enabled?"block":"none";
  const entry=document.getElementById("oniEntryCard");if(entry)entry.style.display=oni.enabled?"none":"";
- const badge=document.querySelector(".brand .badge");if(badge)badge.textContent=oni.enabled?`鬼 ${oni.level}`:"v10.2.2";
+ const badge=document.querySelector(".brand .badge");if(badge)badge.textContent=oni.enabled?`鬼 ${oni.level}`:"v10.15.1";
 }
 const v102Apply=applyMode;
 applyMode=function(){v102Apply();syncV102Gateway()};
