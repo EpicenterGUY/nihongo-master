@@ -42,6 +42,7 @@ function targetReviewItems(){
   let arr=[];
   try{arr=getFiltered(type,level)}catch(e){}
   for(const x of arr){
+   if(!oniState().enabled&&globalThis.nmkIsJLPTSupplement?.(x))continue;
    const s=state.seen[x.id];
    if(s&&(s.rating||0)<3)out.push({...x,_type:type});
   }
