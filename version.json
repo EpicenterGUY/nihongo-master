@@ -1,5 +1,5 @@
 {
-  "version": "10.14.1",
+  "version": "10.15.0",
   "channel": "stable",
   "entry": "index.html",
   "updated": "2026-09-28",
@@ -79,6 +79,9 @@
     "keyboard-target-dedup",
     "runtime-title-sync",
     "pwa-cache-refresh",
-    "latest-router-delegation"
+    "latest-router-delegation",
+    "safe-progress-state-recovery",
+    "storage-failure-resilience",
+    "service-worker-controller-refresh"
   ]
 }
